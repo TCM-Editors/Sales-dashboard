@@ -1,0 +1,3536 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twin Day Sales — Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0b0f1a;
+            --bg2: #111827;
+            --bg3: #1a2235;
+            --bg4: #232d42;
+            --glass: rgba(17, 24, 39, .65);
+            --glass-border: rgba(255, 255, 255, .08);
+            --text: #e2e8f0;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --accent: #06b6d4;
+            --accent2: #8b5cf6;
+            --accent3: #ec4899;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .35);
+            --transition: .25s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        html {
+            font-size: 14px
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg2)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 3px
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent)
+        }
+
+        /* HEADER */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .logo-icon svg {
+            width: 36px;
+            height: 36px
+        }
+
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .app-subtitle {
+            font-size: .75rem;
+            color: var(--text3);
+            font-weight: 400
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .sheet-select {
+            background: var(--bg3);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: .85rem;
+            cursor: pointer
+        }
+
+        .sheet-selector-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .sheet-selector-wrap label {
+            color: var(--text2);
+            font-size: .8rem;
+            font-weight: 500
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff;
+            padding: 8px 18px;
+            font-size: .85rem
+        }
+
+        .btn-upload:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, .3)
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: .78rem
+        }
+
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: .72rem
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--glass-border)
+        }
+
+        .btn-ghost:hover {
+            color: var(--accent);
+            border-color: var(--accent)
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: #fff
+        }
+
+        .btn-accent:hover {
+            filter: brightness(1.15)
+        }
+
+        .btn-accent-alt {
+            background: linear-gradient(135deg, var(--accent2), var(--accent3));
+            color: #fff
+        }
+
+        .btn-accent-alt:hover {
+            filter: brightness(1.15)
+        }
+
+        .btn-clear-filters {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, .3);
+            padding: 6px 14px;
+            font-size: .78rem
+        }
+
+        .btn-clear-filters:hover {
+            background: rgba(239, 68, 68, .25)
+        }
+
+        /* DROPZONE */
+        .dropzone-hero {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 75vh;
+            padding: 40px
+        }
+
+        .dropzone {
+            border: 2px dashed var(--bg4);
+            border-radius: 20px;
+            padding: 80px 60px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            max-width: 560px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(12px)
+        }
+
+        .dropzone.drag-over {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, .06);
+            transform: scale(1.02)
+        }
+
+        .dropzone-icon {
+            margin-bottom: 24px;
+            animation: float 3s ease-in-out infinite
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-10px)
+            }
+        }
+
+        .dropzone h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px
+        }
+
+        .dropzone p {
+            color: var(--text2);
+            font-size: .9rem
+        }
+
+        .dropzone-link {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600
+        }
+
+        .dropzone-formats {
+            font-size: .75rem;
+            color: var(--text3);
+            margin-top: 12px
+        }
+
+        /* FILE INFO BAR */
+        .file-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 20px;
+            background: var(--bg2);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border: 1px solid var(--glass-border)
+        }
+
+        .file-info-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--accent)
+        }
+
+        .file-info-stats {
+            display: flex;
+            gap: 8px
+        }
+
+        .badge {
+            background: var(--bg3);
+            color: var(--text2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 500
+        }
+
+        /* KPI CARDS */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 16px
+        }
+
+        @media(max-width:1100px) {
+            .kpi-section {
+                grid-template-columns: repeat(2, 1fr)
+            }
+        }
+
+        @media(max-width:600px) {
+            .kpi-section {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .kpi-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            min-height: 150px;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .4);
+            border-color: rgba(255, 255, 255, .15)
+        }
+
+        .kpi-card.anim-paused {
+            border-color: rgba(6, 182, 212, .25);
+        }
+
+        .kpi-card.anim-paused::after {
+            content: '⏸ PAUSED';
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: .55rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: .06em;
+            opacity: .7;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0
+        }
+
+        .kpi-card:nth-child(1)::before {
+            background: linear-gradient(90deg, var(--accent), var(--accent2))
+        }
+
+        .kpi-card:nth-child(2)::before {
+            background: linear-gradient(90deg, var(--accent2), var(--accent3))
+        }
+
+        .kpi-card:nth-child(3)::before {
+            background: linear-gradient(90deg, var(--success), var(--accent))
+        }
+
+        .kpi-card:nth-child(4)::before {
+            background: linear-gradient(90deg, var(--warn), var(--accent3))
+        }
+
+        .kpi-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .kpi-label {
+            font-size: .72rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 600;
+        }
+
+        .kpi-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, .05);
+        }
+
+        .kpi-dim-label {
+            font-size: .6rem;
+            color: var(--accent2);
+            font-weight: 600;
+            letter-spacing: .04em;
+            margin-bottom: 2px;
+            opacity: .8;
+        }
+
+        .kpi-cat-header {
+            font-size: .72rem;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 4px;
+            min-height: 18px;
+            transition: opacity .4s ease, transform .4s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kpi-cat-header.fading {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        .kpi-value-wrap {
+            position: relative;
+            height: 38px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            transition: opacity .5s ease, transform .5s ease;
+            opacity: 1;
+        }
+
+        .kpi-value.kpi-fade-out {
+            opacity: 0;
+            transform: translateY(-14px);
+        }
+
+        .kpi-value.kpi-fade-in {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        .kpi-value.kpi-fade-in.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .kpi-dual-row {
+            display: flex;
+            gap: 16px;
+            align-items: baseline;
+        }
+
+        .kpi-dual-item {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .kpi-dual-label {
+            font-size: .58rem;
+            color: var(--text3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .kpi-dual-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .kpi-sub {
+            font-size: .7rem;
+            color: var(--text3);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-growth {
+            font-weight: 700;
+            font-size: .72rem;
+        }
+
+        .kpi-growth.positive {
+            color: var(--success);
+        }
+
+        .kpi-growth.negative {
+            color: var(--danger);
+        }
+
+        .kpi-growth.neutral {
+            color: var(--text3);
+        }
+
+        .kpi-progress-bar {
+            height: 4px;
+            background: var(--bg4);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .kpi-progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease;
+            width: 0%;
+        }
+
+        .kpi-cycle-dots {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+            justify-content: center;
+        }
+
+        .kpi-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--bg4);
+            transition: background .3s, transform .3s;
+        }
+
+        .kpi-dot.active {
+            background: var(--accent);
+            transform: scale(1.4);
+        }
+
+        /* COMPARISON FILTER SECTION */
+        .comparison-section {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+
+        .comparison-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .comparison-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .9rem;
+            font-weight: 700;
+        }
+
+        .comparison-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .comparison-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .comparison-group label {
+            font-size: .68rem;
+            color: var(--text3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .comparison-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .comparison-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--glass-border);
+            background: var(--bg3);
+            color: var(--text2);
+        }
+
+        .comparison-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .comparison-chip.selected {
+            background: rgba(6, 182, 212, .15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .comparison-chip .chip-x {
+            font-size: .65rem;
+            opacity: .5;
+            cursor: pointer;
+        }
+
+        .comparison-chip .chip-x:hover {
+            opacity: 1;
+        }
+
+        /* ACTIVE FILTERS */
+        .active-filters {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg2);
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border: 1px solid var(--glass-border)
+        }
+
+        .active-filters-label {
+            font-size: .75rem;
+            color: var(--text3);
+            font-weight: 600;
+            white-space: nowrap
+        }
+
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(6, 182, 212, .12);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .filter-badge:hover {
+            background: rgba(239, 68, 68, .15);
+            color: var(--danger)
+        }
+
+        .filter-badge svg {
+            width: 12px;
+            height: 12px
+        }
+
+        /* MAIN GRID */
+        .dashboard {
+            padding: 0;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            padding: 0 24px 24px 24px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        @media(max-width:1100px) {
+            .main-layout {
+                grid-template-columns: 1fr
+            }
+        }
+
+        /* TOP CONTROL PANEL (FILTERS) */
+        .top-control-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 61px;
+            z-index: 90;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .top-control-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .filter-list {
+            display: flex;
+            gap: 10px;
+            overflow-x: visible;
+            padding-bottom: 4px;
+            flex: 1;
+        }
+
+        .filter-list::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .filter-group {
+            position: relative;
+            min-width: 150px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            background: var(--bg3);
+            flex-shrink: 0;
+        }
+
+        .filter-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text2);
+            border-radius: var(--radius-sm);
+        }
+
+        .filter-group-header:hover {
+            color: var(--text);
+            background: var(--bg4)
+        }
+
+        .filter-group-header .col-type {
+            font-size: .62rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: .04em
+        }
+
+        .col-type-text {
+            background: rgba(139, 92, 246, .15);
+            color: var(--accent2)
+        }
+
+        .col-type-number {
+            background: rgba(6, 182, 212, .15);
+            color: var(--accent)
+        }
+
+        .col-type-date {
+            background: rgba(236, 72, 153, .15);
+            color: var(--accent3)
+        }
+
+        .filter-group-body {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 300px;
+            max-height: 420px;
+            background: var(--bg2);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: var(--radius);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, .55);
+            z-index: 200;
+            display: none;
+            padding: 14px 16px;
+            overflow-y: auto;
+        }
+
+        .filter-group.open .filter-group-body {
+            display: block
+        }
+
+        .filter-group-header .chevron {
+            transition: var(--transition);
+            transform: rotate(0deg)
+        }
+
+        .filter-group.open .filter-group-header .chevron {
+            transform: rotate(180deg)
+        }
+
+        /* Text filter */
+        .filter-search {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            margin-bottom: 6px;
+            outline: none;
+            transition: var(--transition)
+        }
+
+        .filter-search:focus {
+            border-color: var(--accent)
+        }
+
+        .filter-options {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .filter-options::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .filter-options::-webkit-scrollbar-track {
+            background: var(--bg3);
+        }
+
+        .filter-options::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 3px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            cursor: pointer;
+            font-size: .84rem;
+            color: var(--text2);
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .filter-option.hidden-by-cascade {
+            display: none !important;
+        }
+
+        .filter-option:hover {
+            color: var(--text);
+            background: var(--bg3);
+        }
+
+        .filter-option input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .hidden-by-cascade {
+            display: none !important;
+        }
+
+        .filter-select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .filter-select-actions button {
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            color: var(--accent);
+            font-size: .75rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .filter-select-actions button:hover {
+            background: rgba(6, 182, 212, .15);
+            border-color: var(--accent);
+        }
+
+        /* Range filter */
+        .range-filter {
+            padding: 4px 0
+        }
+
+        .range-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .range-input {
+            flex: 1;
+            padding: 6px 8px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            outline: none;
+            text-align: center
+        }
+
+        .range-input:focus {
+            border-color: var(--accent)
+        }
+
+        .range-sep {
+            color: var(--text3);
+            font-size: .8rem
+        }
+
+        .range-slider-wrap {
+            position: relative;
+            height: 30px;
+            margin: 4px 0
+        }
+
+        .range-track {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--bg4);
+            border-radius: 2px
+        }
+
+        .range-fill {
+            position: absolute;
+            top: 12px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 2px
+        }
+
+        .range-thumb {
+            position: absolute;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid var(--bg);
+            cursor: grab;
+            transition: box-shadow .15s;
+            z-index: 2
+        }
+
+        .range-thumb:hover {
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, .25)
+        }
+
+        .range-thumb:active {
+            cursor: grabbing
+        }
+
+        /* Date filter */
+        .date-input {
+            width: 100%;
+            padding: 6px 10px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .78rem;
+            outline: none;
+            margin-bottom: 6px
+        }
+
+        .date-input:focus {
+            border-color: var(--accent)
+        }
+
+        /* CHARTS */
+        .chart-section {
+            margin-bottom: 16px
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px
+        }
+
+        .chart-controls h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .chart-axis-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px
+        }
+
+        .control-group label {
+            font-size: .68rem;
+            color: var(--text3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em
+        }
+
+        .control-select {
+            background: var(--bg3);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: .78rem;
+            cursor: pointer;
+            min-width: 120px
+        }
+
+        .control-select-sm {
+            min-width: 60px;
+            padding: 4px 6px
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        .chart-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: var(--transition)
+        }
+
+        .chart-card:hover {
+            border-color: rgba(255, 255, 255, .12)
+        }
+
+        .chart-card-wide {
+            grid-column: 1/-1
+        }
+
+        .chart-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px
+        }
+
+        .chart-card-header h4 {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text2)
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 260px
+        }
+
+        .chart-wrap-wide {
+            height: 220px
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important
+        }
+
+        /* TABLE */
+        .table-section {
+            margin-top: 4px
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px
+        }
+
+        .table-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .table-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg3);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .82rem;
+            outline: none;
+            width: 180px
+        }
+
+        .search-box svg {
+            color: var(--text3);
+            flex-shrink: 0
+        }
+
+        .table-page-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .78rem;
+            color: var(--text2)
+        }
+
+        .export-btns {
+            display: flex;
+            gap: 6px
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border)
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem
+        }
+
+        .data-table thead {
+            background: var(--bg3);
+            position: sticky;
+            top: 0;
+            z-index: 2
+        }
+
+        .data-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text2);
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            transition: var(--transition);
+            border-bottom: 2px solid var(--glass-border)
+        }
+
+        .data-table th:hover {
+            color: var(--accent)
+        }
+
+        .data-table th .sort-icon {
+            margin-left: 4px;
+            font-size: .7rem;
+            opacity: .4
+        }
+
+        .data-table th.sorted .sort-icon {
+            opacity: 1;
+            color: var(--accent)
+        }
+
+        .data-table td {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text2);
+            white-space: nowrap;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .data-table tbody tr {
+            transition: var(--transition)
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(6, 182, 212, .04)
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, .015)
+        }
+
+        .data-table tbody tr:nth-child(even):hover {
+            background: rgba(6, 182, 212, .06)
+        }
+
+        /* LOADING */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 15, 26, .85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            gap: 16px
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--bg4);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .loading-overlay p {
+            color: var(--text2);
+            font-size: .9rem
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp .4s ease forwards
+        }
+
+        .delay-1 {
+            animation-delay: .05s
+        }
+
+        .delay-2 {
+            animation-delay: .1s
+        }
+
+        .delay-3 {
+            animation-delay: .15s
+        }
+
+        .delay-4 {
+            animation-delay: .2s
+        }
+
+        /* BUTTERFLY LEGEND */
+        .bf-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            background: var(--bg3);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .bf-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text2);
+        }
+
+        .bf-legend-swatch {
+            width: 28px;
+            height: 10px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .bf-legend-arrow {
+            font-size: .72rem;
+            color: var(--text3);
+            font-weight: 400;
+        }
+
+        /* NEW CHARTS CSS */
+        .butterfly-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 0;
+            overflow-y: auto;
+            max-height: 250px;
+        }
+
+        .bf-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 26px;
+            font-size: .75rem;
+        }
+
+        .bf-left,
+        .bf-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bf-left {
+            justify-content: flex-end;
+            padding-right: 12px;
+        }
+
+        .bf-right {
+            justify-content: flex-start;
+            padding-left: 12px;
+        }
+
+        .bf-center {
+            width: 100px;
+            text-align: center;
+            color: var(--text2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        .bf-bar {
+            height: 18px;
+            border-radius: 4px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .bf-bar:hover {
+            filter: brightness(1.2);
+        }
+
+        .bf-left .bf-bar {
+            background: var(--accent);
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        .bf-right .bf-bar {
+            background: var(--accent2);
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .bf-val {
+            font-size: 0.65rem;
+            color: var(--text);
+            font-weight: 700;
+            white-space: nowrap;
+            min-width: 40px;
+            flex-shrink: 0;
+        }
+
+        .bf-left .bf-val {
+            text-align: right;
+            order: -1;
+        }
+
+        .bf-right .bf-val {
+            text-align: left;
+        }
+
+        .mini-card-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-card {
+            background: var(--bg2);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            width: 300px;
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        .mini-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .mini-card-header button {
+            background: none;
+            border: none;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .mini-card-body {
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.6;
+        }
+        /* ===== CONVERSION ANALYTICS PREMIUM ===== */
+        .conv-section-title{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .conv-gauges-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
+        .conv-gauge-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden;transition:var(--transition);}
+        .conv-gauge-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4);border-color:rgba(255,255,255,.15);}
+        .conv-gauge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;}
+        .gauge-svg{width:140px;height:140px;margin:0 auto;position:relative;}
+        .gauge-bg{fill:none;stroke:var(--bg4);stroke-width:8;}
+        .gauge-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 6px currentColor);}
+        .gauge-target{fill:none;stroke:rgba(255,255,255,.25);stroke-width:2;stroke-dasharray:4 4;}
+        .gauge-center-text{font-size:1.5rem;font-weight:900;fill:var(--text);}
+        .gauge-sub-text{font-size:.6rem;fill:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+        .gauge-label{font-size:.78rem;font-weight:700;color:var(--text);margin-top:10px;}
+        .gauge-target-label{font-size:.65rem;color:var(--text3);margin-top:2px;}
+        .gauge-status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700;margin-top:6px;}
+        .gauge-status.danger{background:rgba(239,68,68,.15);color:var(--danger);}
+        .gauge-status.warn{background:rgba(245,158,11,.15);color:var(--warn);}
+        .gauge-status.success{background:rgba(16,185,129,.15);color:var(--success);}
+        .conv-funnel-wrap{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+        .funnel-stages{display:flex;flex-direction:column;align-items:center;gap:0;padding:16px 0;}
+        .funnel-stage{position:relative;height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all .6s cubic-bezier(.4,0,.2,1);cursor:pointer;color:#fff;font-weight:700;font-size:.85rem;overflow:hidden;}
+        .funnel-stage:hover{filter:brightness(1.15);transform:scaleX(1.02);}
+        .funnel-stage-inner{position:relative;z-index:1;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+        .funnel-arrow{color:var(--text3);font-size:1.2rem;line-height:1;height:20px;display:flex;align-items:center;justify-content:center;}
+        .funnel-dropoff{font-size:.65rem;color:var(--danger);font-weight:700;position:absolute;right:-120px;white-space:nowrap;}
+        .conv-opp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;}
+        .opp-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;transition:var(--transition);}
+        .opp-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.35);}
+        .opp-card.warning{border-color:rgba(239,68,68,.3);box-shadow:0 0 20px rgba(239,68,68,.08);}
+        .opp-card-icon{font-size:1.3rem;margin-bottom:6px;}
+        .opp-card-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+        .opp-card-value{font-size:1.5rem;font-weight:800;margin:4px 0;}
+        .opp-card-sub{font-size:.72rem;color:var(--text3);}
+        .heatmap-wrap{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+        .heatmap-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+        .heatmap-table th{padding:10px 14px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--glass-border);position:sticky;top:0;background:var(--bg3);z-index:2;cursor:pointer;transition:var(--transition);}
+        .heatmap-table th:hover{color:var(--accent);}
+        .heatmap-table td{padding:8px 14px;border-bottom:1px solid var(--glass-border);transition:var(--transition);}
+        .heatmap-table tr:hover td{background:rgba(6,182,212,.04);}
+        .hm-cell{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-weight:700;font-size:.78rem;min-width:70px;justify-content:center;}
+        .hm-cell.hm-red{background:rgba(239,68,68,.15);color:#f87171;}
+        .hm-cell.hm-orange{background:rgba(245,158,11,.15);color:#fbbf24;}
+        .hm-cell.hm-green{background:rgba(16,185,129,.15);color:#34d399;}
+        @keyframes convPulse{0%,100%{opacity:1}50%{opacity:.6}}
+        .conv-pulse{animation:convPulse 2s ease-in-out infinite;}
+    </style>
+</head>
+
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-icon"><svg viewBox="0 0 32 32" fill="none" width="36" height="36">
+                    <rect x="2" y="2" width="12" height="12" rx="3" fill="url(#g1)" />
+                    <rect x="18" y="2" width="12" height="12" rx="3" fill="url(#g2)" />
+                    <rect x="2" y="18" width="12" height="12" rx="3" fill="url(#g2)" />
+                    <rect x="18" y="18" width="12" height="12" rx="3" fill="url(#g1)" />
+                    <defs>
+                        <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32">
+                            <stop stop-color="#06b6d4" />
+                            <stop offset="1" stop-color="#8b5cf6" />
+                        </linearGradient>
+                        <linearGradient id="g2" x1="0" y1="0" x2="32" y2="32">
+                            <stop stop-color="#8b5cf6" />
+                            <stop offset="1" stop-color="#ec4899" />
+                        </linearGradient>
+                    </defs>
+                </svg></div>
+            <div>
+                <h1 class="app-title">Twin Day Sales</h1>
+                <p class="app-subtitle">Analytics & Review Dashboard</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="sheet-selector-wrap" id="sheetSelectorWrap" style="display:none"><label
+                    for="sheetSelector">Sheet:</label><select id="sheetSelector" class="sheet-select"></select></div>
+            <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()"><svg width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg><span>Upload Excel</span></button>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+        </div>
+    </header>
+
+    <section class="dropzone-hero" id="dropzoneHero">
+        <div class="dropzone" id="dropzone">
+            <div class="dropzone-content">
+                <div class="dropzone-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="url(#dg)"
+                        stroke-width="1.5">
+                        <defs>
+                            <linearGradient id="dg" x1="0" y1="0" x2="24" y2="24">
+                                <stop stop-color="#06b6d4" />
+                                <stop offset="1" stop-color="#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg></div>
+                <h2>Drop your Excel file here</h2>
+                <p>or <span class="dropzone-link" onclick="document.getElementById('fileInput').click()">browse
+                        files</span></p>
+                <p class="dropzone-formats">Supports .xlsx, .xls, .csv</p>
+            </div>
+        </div>
+    </section>
+
+    <main class="dashboard" id="dashboard" style="display:none">
+
+        <div class="top-control-panel" id="topControlPanel">
+            <div class="top-control-panel-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg> Filters
+            </div>
+            <div class="filter-list" id="filterList"></div>
+            <button class="btn btn-clear-filters" id="clearAllFiltersBtn"
+                style="display:none; margin-left:auto; flex-shrink: 0;" onclick="clearAllFilters()">✕ Clear</button>
+        </div>
+
+        <div style="padding: 24px 24px 0 24px; max-width: 1800px; margin: 0 auto;">
+            <div class="file-info-bar" id="fileInfoBar">
+                <div class="file-info-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg><span id="fileName">—</span></div>
+                <div class="file-info-stats"><span class="badge" id="rowCount">0 rows</span><span class="badge"
+                        id="colCount">0 columns</span><span class="badge" id="filteredCount">All shown</span></div>
+            </div>
+            <section class="kpi-section" id="kpiSection"></section>
+            <section class="active-filters" id="activeFilters" style="display:none"><span
+                    class="active-filters-label">Active Filters:</span>
+                <div class="active-filters-list" id="activeFiltersList"></div>
+            </section>
+        </div>
+
+        <div class="main-layout">
+            <div class="content-left">
+                <section class="chart-section">
+                    <div class="chart-controls">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10" />
+                                <line x1="12" y1="20" x2="12" y2="4" />
+                                <line x1="6" y1="20" x2="6" y2="14" />
+                            </svg> Visualizations</h3>
+                        <div class="chart-axis-controls">
+                            <div class="control-group"><label>X-Axis</label><select id="chartXAxis"
+                                    class="control-select" onchange="updateCharts()"></select></div>
+                            <div class="control-group"><label>Y-Axis</label><select id="chartYAxis"
+                                    class="control-select" onchange="updateCharts()"></select></div>
+                            <div class="control-group"><label>Aggregation</label><select id="chartAgg"
+                                    class="control-select" onchange="updateCharts()">
+                                    <option value="sum">Sum</option>
+                                    <option value="count">Count</option>
+                                    <option value="avg">Average</option>
+                                    <option value="min">Min</option>
+                                    <option value="max">Max</option>
+                                </select></div>
+                            <div class="control-group"><label>Top N</label><select id="chartTopN" class="control-select"
+                                    onchange="updateCharts()">
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="all">All</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h4 id="barChartTitle">Bar Chart</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('barChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h4 id="doughnutChartTitle">Distribution</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('doughnutChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+                        </div>
+                        <div class="chart-card chart-card-wide">
+                            <div class="chart-card-header">
+                                <h4 id="lineChartTitle">Trend</h4><button class="btn btn-xs btn-ghost"
+                                    onclick="downloadChart('lineChart')">⬇</button>
+                            </div>
+                            <div class="chart-wrap chart-wrap-wide"><canvas id="lineChart"></canvas></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="comparison-section" id="comparisonSection" style="display:none; margin-top: 24px;">
+                    <div class="comparison-header">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M16 3h5v5" />
+                                <path d="M8 3H3v5" />
+                                <path d="M21 3l-7 7" />
+                                <path d="M3 3l7 7" />
+                                <path d="M16 21h5v-5" />
+                                <path d="M8 21H3v-5" />
+                                <path d="M21 21l-7-7" />
+                                <path d="M3 21l7-7" />
+                            </svg> Advanced Analytics & Comparison</h3>
+                        <button class="btn btn-xs btn-ghost" onclick="clearComparison()">Clear</button>
+                    </div>
+                    <div class="comparison-controls"
+                        style="display:flex; gap:16px; align-items:flex-end; width:100%; flex-wrap:wrap;">
+                        <div style="display:flex; gap:12px">
+                            <div class="comparison-group">
+                                <label>Comparison Level</label>
+                                <select id="compCategoryCol" class="control-select"
+                                    onchange="buildComparisonChips()"></select>
+                            </div>
+                            <div class="comparison-group" style="display:none">
+                                <label>Value Column</label>
+                                <select id="compValueCol" class="control-select" onchange="updateComparison()"></select>
+                            </div>
+                            <div class="comparison-group">
+                                <label>Breakdown Axis</label>
+                                <select id="compCenterAxis" class="control-select"
+                                    onchange="updateComparison()"></select>
+                            </div>
+                            <div class="comparison-group">
+                                <label>Metric</label>
+                                <select id="compMetricToggle" class="control-select" onchange="updateComparison()">
+                                    <option value="value">Sales Value</option>
+                                    <option value="qty">Quantity</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="comparison-group" style="margin-left: auto;">
+                            <label>View Mode</label>
+                            <div
+                                style="display:flex;gap:4px;background:var(--bg3);padding:4px;border-radius:6px;border:1px solid var(--glass-border);">
+                                <button class="btn btn-xs" id="btnViewPyramid" onclick="switchCompView('pyramid')"
+                                    style="background:var(--accent);color:white">Pyramid</button>
+                                <button class="btn btn-xs btn-ghost" id="btnViewCombo"
+                                    onclick="switchCompView('combo')">Dual-Axis</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-chips" id="comparisonChips"></div>
+
+                    <div id="comparisonChartsWrapper" style="display:none; margin-top:16px;">
+                        <div class="charts-grid" style="grid-template-columns: 1fr 2fr;">
+                            <div class="chart-card">
+                                <div class="chart-card-header">
+                                    <h4 id="gaugeChartTitle">Target Achievement</h4>
+                                    <button class="btn btn-xs btn-ghost"
+                                        onclick="downloadChart('compGaugeChart')">⬇</button>
+                                </div>
+                                <div class="chart-wrap" style="height: 200px"><canvas id="compGaugeChart"></canvas>
+                                </div>
+                                <div id="gaugeDetails"
+                                    style="text-align:center; font-size:0.85rem; color:var(--text2); margin-top:-20px;">
+                                </div>
+                            </div>
+                            <div class="chart-card" id="viewPyramidContainer">
+                                <div class="chart-card-header">
+                                    <h4 id="butterflyChartTitle">Population / Variance Analysis</h4>
+                                    <button class="btn btn-xs btn-ghost"
+                                        onclick="downloadHTMLChart('viewPyramidContainer', 'butterfly_chart')">⬇</button>
+                                </div>
+                                <div id="bfLegend" class="bf-legend" style="display:none">
+                                    <div class="bf-legend-item">
+                                        <div class="bf-legend-swatch" style="background:var(--accent)"></div>
+                                        <span class="bf-legend-arrow">◀</span>
+                                        <span id="bfLegendA">Series A</span>
+                                    </div>
+                                    <div style="width:1px;height:24px;background:var(--glass-border)"></div>
+                                    <div class="bf-legend-item">
+                                        <span id="bfLegendB">Series B</span>
+                                        <span class="bf-legend-arrow">▶</span>
+                                        <div class="bf-legend-swatch" style="background:var(--accent2)"></div>
+                                    </div>
+                                </div>
+                                <div class="butterfly-container" id="butterflyChart"
+                                    style="padding: 10px; background: var(--bg2)"></div>
+                            </div>
+                            <div class="chart-card" id="viewComboContainer" style="display:none">
+                                <div class="chart-card-header">
+                                    <h4 id="comboChartTitle">Dual-Axis Performance Combo</h4>
+                                    <button class="btn btn-xs btn-ghost"
+                                        onclick="downloadChart('compComboChart')">⬇</button>
+                                </div>
+                                <div class="chart-wrap chart-wrap-wide"><canvas id="compComboChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="table-section">
+                    <div class="table-header">
+                        <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <line x1="3" y1="9" x2="21" y2="9" />
+                                <line x1="3" y1="15" x2="21" y2="15" />
+                                <line x1="9" y1="3" x2="9" y2="21" />
+                            </svg> Data Table</h3>
+                        <div class="table-controls">
+                            <div class="search-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg><input type="text" id="tableSearch" placeholder="Search all columns..."
+                                    oninput="onTableSearch()"></div>
+                            <div class="table-page-info"><span id="pageInfo">—</span><button
+                                    class="btn btn-xs btn-ghost" onclick="changePage(-1)">‹</button><button
+                                    class="btn btn-xs btn-ghost" onclick="changePage(1)">›</button><select
+                                    id="pageSizeSelect" class="control-select control-select-sm"
+                                    onchange="changePageSize()">
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                    <option value="250">250</option>
+                                </select></div>
+                            <div class="export-btns"><button class="btn btn-sm btn-accent" onclick="exportCSV()">⬇
+                                    CSV</button><button class="btn btn-sm btn-accent-alt" onclick="exportExcel()">⬇
+                                    Excel</button></div>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead id="dataTableHead"></thead>
+                            <tbody id="dataTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="insights-sidebar" id="insightsSidebar">
+                <div class="chart-card" style="position: sticky; top: 140px;">
+                    <div class="chart-card-header">
+                        <h4>💡 Smart Insights</h4>
+                    </div>
+                    <div class="insights-content" id="smartInsightsContent"
+                        style="display:flex;flex-direction:column;gap:16px;">
+                        <!-- AI Insights Injected Here -->
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- ===== CONVERSION ANALYTICS SECTION ===== -->
+        <div id="conversionSection" style="display:none; padding: 0 24px 24px 24px; max-width: 1800px; margin: 0 auto;">
+            <section class="comparison-section" style="margin-top:0;">
+                <div class="comparison-header" style="margin-bottom:16px;">
+                    <h3 class="conv-section-title">📱 Conversion Analytics — Mobile Addon Performance</h3>
+                    <button class="btn btn-xs btn-ghost" onclick="downloadHTMLChart('conversionSection', 'conversion_analytics')">⬇ Export</button>
+                </div>
+                <div class="comparison-controls" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px;">
+                    <div class="comparison-group">
+                        <label>Base Metric (Mobile Sales)</label>
+                        <select id="convBaseCol" class="control-select" onchange="rebuildConvMetrics()"></select>
+                    </div>
+                    <div class="comparison-group">
+                        <label>Breakdown By</label>
+                        <select id="convBreakdownCol" class="control-select" onchange="updateConversion()"></select>
+                    </div>
+                    <div class="comparison-group">
+                        <label>Target %</label>
+                        <input type="number" id="convTarget" class="control-select" value="60" min="1" max="100" style="width:70px;" onchange="updateConversion()">
+                    </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:.68rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px;">Addon Metrics (select to track)</label>
+                    <div id="convMetricsList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                </div>
+
+                <!-- SECTION 1: Gauge Meters -->
+                <div id="convGaugesRow" class="conv-gauges-grid"></div>
+
+                <!-- SECTION 2: Funnel + Opportunity Cards side by side -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" id="convFunnelOppRow">
+                    <div class="conv-funnel-wrap">
+                        <h4 style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px;">🔽 Conversion Funnel</h4>
+                        <div id="convFunnelBody" class="funnel-stages"></div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:.85rem;font-weight:700;color:var(--text2);margin-bottom:8px;">⚠️ Opportunity Loss Analysis</h4>
+                        <div id="convOppCards" class="conv-opp-grid"></div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Breakdown Chart -->
+                <div class="charts-grid" style="grid-template-columns:1fr;margin-bottom:16px;">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h4 id="convBreakdownTitle">Conversion % by Breakdown</h4>
+                            <button class="btn btn-xs btn-ghost" onclick="downloadChart('convBreakdownChart')">⬇</button>
+                        </div>
+                        <div class="chart-wrap" style="height:300px;"><canvas id="convBreakdownChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: Heatmap Table -->
+                <div class="heatmap-wrap">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                        <h4 style="font-size:.85rem;font-weight:700;color:var(--text2);">🗺️ Performance Heatmap</h4>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span class="hm-cell hm-red" style="font-size:.6rem;">🔴 &lt;30%</span>
+                            <span class="hm-cell hm-orange" style="font-size:.6rem;">🟠 30-59%</span>
+                            <span class="hm-cell hm-green" style="font-size:.6rem;">🟢 ≥60%</span>
+                        </div>
+                    </div>
+                    <div class="table-scroll" style="max-height:400px;">
+                        <table class="heatmap-table">
+                            <thead id="convHeatHead"></thead>
+                            <tbody id="convHeatBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <button class="mobile-filter-toggle" id="mobileFilterToggle" onclick="toggleMobileSidebar()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+        </svg>
+    </button>
+
+    <div class="loading-overlay" id="loadingOverlay" style="display:none">
+        <div class="spinner"></div>
+        <p>Processing your data…</p>
+    </div>
+
+    <script>
+        // Guard: some browser extensions inject an onload referencing this — define a no-op so it doesn't crash
+        window.solveSimpleChallenge = function () { };
+
+        // Unregister datalabels globally — we add it per-chart via plugins array
+        if (typeof ChartDataLabels !== 'undefined') {
+            Chart.defaults.set('plugins.datalabels', { display: false });
+        }
+
+        // ===== GLOBAL STATE =====
+        let workbook = null, allHeaders = [], allData = [], filteredData = [], columnTypes = {};
+        let activeFilters = {}, sortCol = null, sortDir = 'asc', currentPage = 0, pageSize = 50, searchTerm = '';
+        let chartInstances = { bar: null, doughnut: null, line: null, compBar: null, compLine: null };
+        const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#14b8a6', '#f97316', '#6366f1', '#e11d48', '#84cc16', '#0ea5e9', '#d946ef'];
+
+        // ===== FILE HANDLING =====
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over') });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+        dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]) });
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]) });
+
+        function toggleMobileSidebar() {
+            document.getElementById('filterSidebar').classList.toggle('open');
+        }
+
+        function handleFile(file) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('fileName').textContent = file.name;
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'csv') {
+                let parsedData = [];
+                const overlayText = document.querySelector('.loading-overlay p');
+                overlayText.textContent = 'Parsing CSV... 0 rows';
+                Papa.parse(file, {
+                    header: true,
+                    worker: true,
+                    skipEmptyLines: true,
+                    step: function (results) {
+                        parsedData.push(results.data);
+                        if (parsedData.length % 20000 === 0) {
+                            overlayText.textContent = `Parsing CSV... ${fmtNum(parsedData.length)} rows`;
+                        }
+                    },
+                    complete: function () {
+                        overlayText.textContent = 'Processing data...';
+                        setTimeout(() => {
+                            try {
+                                if (!parsedData.length) { alert('File is empty'); return; }
+                                allHeaders = Object.keys(parsedData[0]);
+                                allData = parsedData;
+                                columnTypes = detectColumnTypes(allHeaders, allData);
+                                finishLoad();
+                            } catch (e) {
+                                alert('Error processing CSV: ' + e.message);
+                            }
+                            document.getElementById('loadingOverlay').style.display = 'none';
+                            overlayText.textContent = 'Processing your data...';
+                        }, 100);
+                    },
+                    error: function (err) {
+                        alert('Error parsing CSV: ' + err.message);
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    }
+                });
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true, cellNF: true });
+                    const sel = document.getElementById('sheetSelector');
+                    sel.innerHTML = '';
+                    workbook.SheetNames.forEach((n, i) => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o) });
+                    if (workbook.SheetNames.length > 1) document.getElementById('sheetSelectorWrap').style.display = 'flex';
+                    sel.onchange = () => loadSheet(sel.value);
+                    loadSheet(workbook.SheetNames[0]);
+                } catch (err) { alert('Error reading file: ' + err.message) }
+                document.getElementById('loadingOverlay').style.display = 'none';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function finishLoad() {
+            activeFilters = {}; sortCol = null; sortDir = 'asc'; currentPage = 0; searchTerm = '';
+            document.getElementById('tableSearch').value = '';
+            document.getElementById('dropzoneHero').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('rowCount').textContent = fmtNum(allData.length) + ' rows';
+            document.getElementById('colCount').textContent = allHeaders.length + ' columns';
+            buildFilters(); buildAxisSelectors(); buildComparisonSelectors(); buildConversionSelectors(); applyFilters();
+            document.getElementById('conversionSection').style.display = 'block';
+        }
+
+        function loadSheet(name) {
+            const ws = workbook.Sheets[name];
+            const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            if (!json.length) { alert('Sheet is empty'); return }
+            allHeaders = Object.keys(json[0]);
+            allData = json;
+            columnTypes = detectColumnTypes(allHeaders, allData);
+            finishLoad();
+        }
+
+        // ===== COLUMN TYPE DETECTION =====
+        function detectColumnTypes(headers, data) {
+            const types = {};
+            const sample = data.slice(0, Math.min(200, data.length));
+            headers.forEach(h => {
+                let nums = 0, dates = 0, total = 0;
+                sample.forEach(r => {
+                    const v = r[h];
+                    if (v === '' || v === null || v === undefined) return;
+                    total++;
+                    if (v instanceof Date || (typeof v === 'string' && !isNaN(Date.parse(v)) && /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}/.test(v))) dates++;
+                    else if (typeof v === 'number' || (!isNaN(Number(v)) && v !== '')) nums++;
+                });
+                if (total === 0) types[h] = 'text';
+                else if (dates / total > .6) types[h] = 'date';
+                else if (nums / total > .6) types[h] = 'number';
+                else types[h] = 'text';
+            });
+            return types;
+        }
+
+        // ===== FILTER BUILDING =====
+        function buildFilters() {
+            const list = document.getElementById('filterList');
+            list.innerHTML = '';
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                const grp = document.createElement('div'); grp.className = 'filter-group'; grp.id = 'fg-' + idx;
+                let bodyHTML = '';
+                if (type === 'text') {
+                    const uniq = [...new Set(allData.map(r => String(r[h] ?? '')))].sort();
+                    bodyHTML = `<div class="filter-select-actions"><button onclick="selectAllFilter(${idx},true)">Select All</button><button onclick="selectAllFilter(${idx},false)">Deselect All</button></div>`;
+                    bodyHTML += `<input class="filter-search" placeholder="Search..." oninput="filterSearchOptions(${idx},this.value)">`;
+                    bodyHTML += `<div class="filter-options" id="fo-${idx}">`;
+                    uniq.forEach((v, vi) => {
+                        bodyHTML += `<label class="filter-option" data-val="${v.replace(/"/g, '&quot;').toLowerCase()}"><input type="checkbox" checked data-col="${h}" data-val="${v.replace(/"/g, '&quot;')}" onchange="onTextFilterChange()"> <span>${v || '(empty)'}</span></label>`;
+                    });
+                    bodyHTML += `</div>`;
+                } else if (type === 'number') {
+                    const vals = allData.map(r => Number(r[h])).filter(v => !isNaN(v));
+                    let mn = 0, mx = 100;
+                    if (vals.length) {
+                        mn = vals[0]; mx = vals[0];
+                        for (let i = 1; i < vals.length; i++) {
+                            if (vals[i] < mn) mn = vals[i];
+                            if (vals[i] > mx) mx = vals[i];
+                        }
+                    }
+                    bodyHTML = `<div class="range-filter"><div class="range-inputs"><input class="range-input" type="number" id="rmin-${idx}" value="${mn}" step="any" onchange="onRangeChange(${idx})"><span class="range-sep">—</span><input class="range-input" type="number" id="rmax-${idx}" value="${mx}" step="any" onchange="onRangeChange(${idx})"></div>`;
+                    bodyHTML += `<div class="range-slider-wrap" id="rsw-${idx}" data-min="${mn}" data-max="${mx}"><div class="range-track"></div><div class="range-fill" id="rf-${idx}"></div><div class="range-thumb" id="rt1-${idx}" style="left:0%" onmousedown="startDrag(event,${idx},'min')"></div><div class="range-thumb" id="rt2-${idx}" style="left:100%" onmousedown="startDrag(event,${idx},'max')"></div></div></div>`;
+                } else {
+                    const vals = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v));
+                    const parsed = vals.map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                    let mnD = '', mxD = '';
+                    if (parsed.length) { parsed.sort((a, b) => a - b); mnD = fmtDate(parsed[0]); mxD = fmtDate(parsed[parsed.length - 1]) }
+                    bodyHTML = `<div><label style="font-size:.72rem;color:var(--text3)">From</label><input class="date-input" type="date" id="dmin-${idx}" value="${mnD}" onchange="onDateChange(${idx})"><label style="font-size:.72rem;color:var(--text3)">To</label><input class="date-input" type="date" id="dmax-${idx}" value="${mxD}" onchange="onDateChange(${idx})"></div>`;
+                }
+                const typeLabel = type === 'text' ? 'TEXT' : type === 'number' ? 'NUM' : 'DATE';
+                const typeCls = type === 'text' ? 'col-type-text' : type === 'number' ? 'col-type-number' : 'col-type-date';
+                grp.innerHTML = `<div class="filter-group-header" onclick="toggleFilterGroup(${idx}, event)"><span>${h}</span><span style="display:flex;align-items:center;gap:6px"><span class="col-type ${typeCls}">${typeLabel}</span><svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="filter-group-body" onclick="event.stopPropagation()">${bodyHTML}</div>`;
+                list.appendChild(grp);
+            });
+        }
+        function toggleFilterGroup(idx, event) {
+            if (event) event.stopPropagation();
+            const grp = document.getElementById('fg-' + idx);
+            const wasOpen = grp.classList.contains('open');
+            document.querySelectorAll('.filter-group').forEach(g => g.classList.remove('open'));
+            if (!wasOpen) grp.classList.add('open');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.filter-group')) {
+                document.querySelectorAll('.filter-group').forEach(g => g.classList.remove('open'));
+            }
+        });
+
+        function filterSearchOptions(idx, term) {
+            const opts = document.querySelectorAll('#fo-' + idx + ' .filter-option');
+            term = term.toLowerCase();
+            opts.forEach(o => { o.style.display = o.dataset.val.includes(term) ? '' : 'none' });
+        }
+        function selectAllFilter(idx, checked) {
+            document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(cb => { cb.checked = checked });
+            onTextFilterChange();
+        }
+
+        // ===== FILTER APPLICATION =====
+        function onTextFilterChange() { collectFilters(); applyFilters() }
+        function onRangeChange(idx) { collectFilters(); applyFilters() }
+        function onDateChange(idx) { collectFilters(); applyFilters() }
+
+        function updateFilterVisibility() {
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                if (type === 'text') {
+                    const validVals = new Set();
+                    allData.forEach(r => {
+                        let isValid = true;
+                        for (let key in activeFilters) {
+                            if (key === h) continue;
+                            const f = activeFilters[key];
+                            const v = r[key];
+                            if (f.type === 'text' && !f.values.has(String(v ?? '').toLowerCase())) isValid = false;
+                            if (f.type === 'number') { const nv = Number(v); if (isNaN(nv) || nv < f.min || nv > f.max) isValid = false; }
+                            if (f.type === 'date') { const dv = v instanceof Date ? v : new Date(v); if (isNaN(dv) || (f.min && dv < f.min) || (f.max && dv > f.max)) isValid = false; }
+                            if (!isValid) break;
+                        }
+                        if (isValid) validVals.add(String(r[h] ?? '').toLowerCase());
+                    });
+
+                    const opts = document.querySelectorAll('#fo-' + idx + ' .filter-option');
+                    opts.forEach(o => {
+                        if (validVals.has(o.dataset.val.toLowerCase())) {
+                            o.classList.remove('hidden-by-cascade');
+                        } else {
+                            o.classList.add('hidden-by-cascade');
+                        }
+                    });
+                }
+            });
+        }
+
+        function collectFilters() {
+            activeFilters = {};
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                if (type === 'text') {
+                    const cbs = document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]');
+                    const all = [...cbs], checked = all.filter(c => c.checked);
+                    if (checked.length < all.length) {
+                        activeFilters[h] = { type: 'text', values: new Set(checked.map(c => c.dataset.val.toLowerCase())) };
+                    }
+                } else if (type === 'number') {
+                    const minEl = document.getElementById('rmin-' + idx), maxEl = document.getElementById('rmax-' + idx);
+                    const wrap = document.getElementById('rsw-' + idx);
+                    const oMin = parseFloat(wrap.dataset.min), oMax = parseFloat(wrap.dataset.max);
+                    const mn = parseFloat(minEl.value), mx = parseFloat(maxEl.value);
+                    if (mn > oMin || mx < oMax) activeFilters[h] = { type: 'number', min: mn, max: mx };
+                } else {
+                    const mnEl = document.getElementById('dmin-' + idx), mxEl = document.getElementById('dmax-' + idx);
+                    if (mnEl.value || mxEl.value) {
+                        const allDates = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v)).map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                        if (allDates.length) {
+                            allDates.sort((a, b) => a - b);
+                            const oMin = fmtDate(allDates[0]), oMax = fmtDate(allDates[allDates.length - 1]);
+                            if (mnEl.value !== oMin || mxEl.value !== oMax) activeFilters[h] = { type: 'date', min: mnEl.value ? new Date(mnEl.value) : null, max: mxEl.value ? new Date(mxEl.value + 'T23:59:59') : null };
+                        }
+                    }
+                }
+            });
+        }
+
+        function applyFilters() {
+            filteredData = allData.filter(r => {
+                return Object.keys(activeFilters).every(h => {
+                    const f = activeFilters[h];
+                    const v = r[h];
+                    if (f.type === 'text') return f.values.has(String(v ?? '').toLowerCase());
+                    if (f.type === 'number') { const nv = Number(v); return !isNaN(nv) && nv >= f.min && nv <= f.max }
+                    if (f.type === 'date') { const dv = v instanceof Date ? v : new Date(v); if (isNaN(dv)) return false; return (!f.min || dv >= f.min) && (!f.max || dv <= f.max) }
+                    return true;
+                }) && (!searchTerm || Object.values(r).some(v => String(v).toLowerCase().includes(searchTerm.toLowerCase())));
+            });
+            const fk = Object.keys(activeFilters);
+            document.getElementById('clearAllFiltersBtn').style.display = fk.length ? 'inline-flex' : 'none';
+            document.getElementById('filteredCount').textContent = filteredData.length === allData.length ? 'All shown' : filteredData.length + ' of ' + allData.length;
+            renderActiveFilterBadges(); updateKPIs(); currentPage = 0; renderTable();
+            updateFilterVisibility();
+
+            // Smart Drill Down Logic
+            const brandCol = detectBrandCol(), gmCol = detectGmCol(), asmCol = detectAsmCol(), branchCol = findCol(['branch']) || findCol(['store']);
+            let bestX = null;
+            if (activeFilters[gmCol] && !activeFilters[asmCol]) bestX = asmCol;
+            else if (activeFilters[asmCol] && !activeFilters[branchCol]) bestX = branchCol;
+
+            if (bestX) {
+                const xSel = document.getElementById('chartXAxis');
+                if (xSel && xSel.value !== bestX) xSel.value = bestX;
+            }
+
+            updateCharts();
+
+            // Dynamic Comparison Chips Update
+            const catCol = document.getElementById('compCategoryCol').value;
+            if (catCol) {
+                const cats = [...new Set(filteredData.map(r => String(r[catCol] ?? '').trim()))].filter(Boolean).sort();
+                const newSet = new Set();
+                if (typeof comparisonSelected !== 'undefined') {
+                    comparisonSelected.forEach(c => { if (cats.includes(c)) newSet.add(c); });
+                    comparisonSelected = newSet;
+                }
+                renderComparisonChips(cats);
+            }
+
+            updateComparisonCharts();
+            updateSmartInsights();
+            updateConversion();
+            updateFilterVisibility();
+        }
+
+        function updateSmartInsights() {
+            const wrap = document.getElementById('smartInsightsContent');
+            if (!wrap) return;
+
+            const valCol = detectValueCol();
+            const catCol = detectBrandCol() || findCol(['category', 'brand']);
+            if (!valCol || !catCol || !filteredData.length) {
+                wrap.innerHTML = '<div style="color:var(--text3);font-size:0.85rem">Not enough data for insights.</div>';
+                return;
+            }
+
+            const catSales = {};
+            let totalVal = 0;
+            filteredData.forEach(r => {
+                const c = String(r[catCol] ?? '').trim() || 'Unknown';
+                const v = Number(r[valCol]) || 0;
+                catSales[c] = (catSales[c] || 0) + v;
+                totalVal += v;
+            });
+
+            const sortedCats = Object.entries(catSales).sort((a, b) => b[1] - a[1]);
+            const topCat = sortedCats[0];
+            const weakCat = sortedCats[sortedCats.length - 1];
+
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysElapsed = now.getDate();
+            const currentRunRate = totalVal / daysElapsed;
+            const projectedTotal = currentRunRate * daysInMonth;
+
+            // AI-like text
+            let suggestion = '';
+            if (topCat && weakCat && topCat[0] !== weakCat[0]) {
+                suggestion = `Consider investigating why <strong>${weakCat[0]}</strong> is underperforming compared to <strong>${topCat[0]}</strong>. A targeted local campaign may boost momentum.`;
+            } else {
+                suggestion = `Overall performance across categories is highly concentrated.`;
+            }
+
+            wrap.innerHTML = `
+                <div style="background:rgba(16,185,129,0.08); border-left:3px solid var(--success); padding:14px; border-radius:6px; transition:var(--transition);" class="fade-in">
+                    <div style="font-size:0.65rem; color:var(--success); text-transform:uppercase; font-weight:800; letter-spacing:0.05em">🏆 Top Category</div>
+                    <div style="font-size:1.15rem; color:var(--text); font-weight:700; margin-top:6px">${topCat ? topCat[0] : 'N/A'}</div>
+                    <div style="font-size:0.85rem; color:var(--text2); font-weight:500; margin-top:2px">${topCat ? fmtNum(topCat[1]) : '0'} Val</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.08); border-left:3px solid var(--danger); padding:14px; border-radius:6px; transition:var(--transition);" class="fade-in delay-1">
+                    <div style="font-size:0.65rem; color:var(--danger); text-transform:uppercase; font-weight:800; letter-spacing:0.05em">⚠️ Weakest Category</div>
+                    <div style="font-size:1.15rem; color:var(--text); font-weight:700; margin-top:6px">${weakCat ? weakCat[0] : 'N/A'}</div>
+                    <div style="font-size:0.85rem; color:var(--text2); font-weight:500; margin-top:2px">${weakCat ? fmtNum(weakCat[1]) : '0'} Val</div>
+                </div>
+                <div style="background:rgba(6,182,212,0.08); border-left:3px solid var(--accent); padding:14px; border-radius:6px; transition:var(--transition);" class="fade-in delay-2">
+                    <div style="font-size:0.65rem; color:var(--accent); text-transform:uppercase; font-weight:800; letter-spacing:0.05em">🎯 Run Rate Tracker</div>
+                    <div style="font-size:1.15rem; color:var(--text); font-weight:700; margin-top:6px">Proj: ${fmtNum(projectedTotal)}</div>
+                    <div style="font-size:0.85rem; color:var(--text2); font-weight:500; margin-top:4px">Run rate: <strong style="color:var(--accent)">${fmtNum(currentRunRate)}</strong> /day.</div>
+                </div>
+                <div style="background:rgba(139,92,246,0.08); border-left:3px solid var(--accent2); padding:14px; border-radius:6px; transition:var(--transition);" class="fade-in delay-3">
+                    <div style="font-size:0.65rem; color:var(--accent2); text-transform:uppercase; font-weight:800; letter-spacing:0.05em">💡 AI Action Plan</div>
+                    <div style="font-size:0.9rem; color:var(--text); margin-top:8px; line-height:1.6; font-weight:500">${suggestion}</div>
+                </div>
+            `;
+        }
+
+        function clearAllFilters() {
+            allHeaders.forEach((h, idx) => {
+                const type = columnTypes[h];
+                if (type === 'text') document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(c => c.checked = true);
+                else if (type === 'number') {
+                    const wrap = document.getElementById('rsw-' + idx);
+                    document.getElementById('rmin-' + idx).value = wrap.dataset.min;
+                    document.getElementById('rmax-' + idx).value = wrap.dataset.max;
+                    updateSliderVisual(idx);
+                } else {
+                    const vals = allData.map(r => r[h]).filter(v => v instanceof Date || (!isNaN(Date.parse(v)) && v)).map(v => v instanceof Date ? v : new Date(v)).filter(d => !isNaN(d));
+                    if (vals.length) { vals.sort((a, b) => a - b); document.getElementById('dmin-' + idx).value = fmtDate(vals[0]); document.getElementById('dmax-' + idx).value = fmtDate(vals[vals.length - 1]) }
+                }
+            });
+            activeFilters = {}; applyFilters();
+        }
+        function renderActiveFilterBadges() {
+            const cont = document.getElementById('activeFiltersList');
+            const wrap = document.getElementById('activeFilters');
+            const keys = Object.keys(activeFilters);
+            if (!keys.length) { wrap.style.display = 'none'; return }
+            wrap.style.display = 'flex';
+            cont.innerHTML = keys.map(h => {
+                const f = activeFilters[h];
+                let label = h + ': ';
+                if (f.type === 'text') label += f.values.size + ' selected';
+                else if (f.type === 'number') label += f.min + ' – ' + f.max;
+                else label += (f.min ? fmtDate(f.min) : '…') + ' → ' + (f.max ? fmtDate(f.max) : '…');
+                return `<span class="filter-badge" onclick="removeFilter('${h}')">${label} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+            }).join('');
+        }
+        function removeFilter(h) {
+            const idx = allHeaders.indexOf(h); if (idx < 0) return;
+            const type = columnTypes[h];
+            if (type === 'text') document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(c => c.checked = true);
+            else if (type === 'number') {
+                const wrap = document.getElementById('rsw-' + idx);
+                document.getElementById('rmin-' + idx).value = wrap.dataset.min;
+                document.getElementById('rmax-' + idx).value = wrap.dataset.max;
+                updateSliderVisual(idx);
+            }
+            delete activeFilters[h]; applyFilters();
+        }
+
+        // ===== RANGE SLIDER DRAG =====
+        let dragState = null;
+        function startDrag(e, idx, which) {
+            e.preventDefault();
+            const wrap = document.getElementById('rsw-' + idx);
+            const rect = wrap.getBoundingClientRect();
+            dragState = { idx, which, rect, min: parseFloat(wrap.dataset.min), max: parseFloat(wrap.dataset.max) };
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+        function onDrag(e) {
+            if (!dragState) return;
+            const { idx, which, rect, min, max } = dragState;
+            let pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            let val = min + (max - min) * pct;
+            val = Math.round(val * 100) / 100;
+            if (which === 'min') {
+                const curMax = parseFloat(document.getElementById('rmax-' + idx).value);
+                if (val > curMax) val = curMax;
+                document.getElementById('rmin-' + idx).value = val;
+            } else {
+                const curMin = parseFloat(document.getElementById('rmin-' + idx).value);
+                if (val < curMin) val = curMin;
+                document.getElementById('rmax-' + idx).value = val;
+            }
+            updateSliderVisual(idx); collectFilters(); applyFilters();
+        }
+        function stopDrag() { dragState = null; document.removeEventListener('mousemove', onDrag); document.removeEventListener('mouseup', stopDrag) }
+        function updateSliderVisual(idx) {
+            const wrap = document.getElementById('rsw-' + idx);
+            if (!wrap) return;
+            const min = parseFloat(wrap.dataset.min), max = parseFloat(wrap.dataset.max);
+            const curMin = parseFloat(document.getElementById('rmin-' + idx).value);
+            const curMax = parseFloat(document.getElementById('rmax-' + idx).value);
+            const range = max - min || 1;
+            const lPct = ((curMin - min) / range) * 100, rPct = ((curMax - min) / range) * 100;
+            document.getElementById('rt1-' + idx).style.left = lPct + '%';
+            document.getElementById('rt2-' + idx).style.left = rPct + '%';
+            const fill = document.getElementById('rf-' + idx);
+            fill.style.left = lPct + '%'; fill.style.width = (rPct - lPct) + '%';
+        }
+
+        // ===== KPI CARDS =====
+        let kpiAnimTimers = [];
+        let globalKpiTimer = null;
+        let globalKpiIndex = 0;
+        let globalKpiPaused = false;
+        let comparisonSelected = new Set();
+
+        function startGlobalKpiCycle(qtyItems, valItems, projItems, intervalMs = 7000) {
+            if (globalKpiTimer) clearInterval(globalKpiTimer);
+            globalKpiIndex = 0;
+            globalKpiPaused = false;
+
+            const sec = document.getElementById('kpiSection');
+            if (sec) {
+                sec.addEventListener('mouseenter', () => { globalKpiPaused = true; sec.classList.add('anim-paused'); });
+                sec.addEventListener('mouseleave', () => { globalKpiPaused = false; sec.classList.remove('anim-paused'); });
+            }
+
+            function updateCardDOM(cardId, item, dotIdx, isProj) {
+                if (!item) return;
+                const card = document.getElementById(cardId);
+                if (!card) return;
+                const catHeader = card.querySelector('.kpi-cat-header');
+                const dots = card.querySelectorAll('.kpi-dot');
+
+                catHeader.classList.add('fading');
+
+                if (isProj) {
+                    const dualWrap = card.querySelector('.kpi-proj-dual');
+                    if (dualWrap) dualWrap.style.opacity = '0';
+                    setTimeout(() => {
+                        catHeader.textContent = item.name;
+                        catHeader.classList.remove('fading');
+                        if (dualWrap) {
+                            dualWrap.innerHTML = `<div class="kpi-dual-item"><span class="kpi-dual-label">Proj. Qty</span><span class="kpi-dual-val">${fmtNum(item.projQty)}</span></div><div class="kpi-dual-item"><span class="kpi-dual-label">Proj. Value</span><span class="kpi-dual-val">${fmtNum(item.projVal)}</span></div>`;
+                            dualWrap.style.opacity = '1';
+                        }
+                        dots.forEach((d, di) => d.classList.toggle('active', di === dotIdx));
+                    }, 400);
+                } else {
+                    const dimLabel = card.querySelector('.kpi-dim-label');
+                    const valueWrap = card.querySelector('.kpi-value-wrap');
+                    const oldVals = valueWrap.querySelectorAll('.kpi-value');
+                    oldVals.forEach(v => v.classList.add('kpi-fade-out'));
+                    setTimeout(() => {
+                        if (dimLabel) dimLabel.textContent = item.dim || '';
+                        catHeader.textContent = item.name;
+                        catHeader.classList.remove('fading');
+                        valueWrap.innerHTML = '';
+                        const newVal = document.createElement('div');
+                        newVal.className = 'kpi-value kpi-fade-in';
+                        newVal.textContent = fmtNum(item.value);
+                        valueWrap.appendChild(newVal);
+                        requestAnimationFrame(() => { requestAnimationFrame(() => newVal.classList.add('active')); });
+                        dots.forEach((d, di) => d.classList.toggle('active', di === dotIdx));
+                    }, 400);
+                }
+            }
+
+            function showItem(idx) {
+                if (qtyItems && qtyItems.length > 0) updateCardDOM('kpiQty', qtyItems[idx % qtyItems.length], idx % qtyItems.length, false);
+                if (valItems && valItems.length > 0) updateCardDOM('kpiVal', valItems[idx % valItems.length], idx % valItems.length, false);
+                if (projItems && projItems.length > 0) updateCardDOM('kpiProj', projItems[idx % projItems.length], idx % projItems.length, true);
+            }
+
+            showItem(0);
+            const maxLen = Math.max(qtyItems?.length || 0, valItems?.length || 0, projItems?.length || 0);
+            if (maxLen > 1) {
+                globalKpiTimer = setInterval(() => {
+                    if (globalKpiPaused) return;
+                    globalKpiIndex++;
+                    showItem(globalKpiIndex);
+                }, intervalMs);
+                kpiAnimTimers.push(globalKpiTimer);
+            }
+        }
+
+        function findCol(keywords) {
+            const kws = keywords.map(k => k.toLowerCase().replace(/[\s_]/g, ''));
+            return allHeaders.find(h => {
+                const norm = h.toLowerCase().replace(/[\s_]/g, '');
+                return kws.every(k => norm.includes(k));
+            }) || null;
+        }
+        function sumColForData(col, data) {
+            if (!col) return 0;
+            return data.reduce((s, r) => { const v = Number(r[col]); return s + (isNaN(v) ? 0 : v); }, 0);
+        }
+
+        function detectBrandCol() { return findCol(['brand']) || findCol(['category']) || findCol(['cat']) || findCol(['product']) || null; }
+        function detectGmCol() { return findCol(['gm']) || findCol(['general', 'manager']) || null; }
+        function detectAsmCol() { return findCol(['asm']) || findCol(['area', 'sales']) || findCol(['area', 'manager']) || null; }
+        function detectQtyCol() { return findCol(['qty']) || findCol(['quantity']) || findCol(['invoice', 'count']) || findCol(['inv', 'count']) || findCol(['count']) || null; }
+        function detectValueCol() { return findCol(['total', 'net', 'value']) || findCol(['net', 'value']) || findCol(['invoice', 'value']) || findCol(['inv', 'value']) || findCol(['value']) || findCol(['amount']) || findCol(['revenue']) || null; }
+        function detectDateCol() { return allHeaders.find(h => columnTypes[h] === 'date') || findCol(['date']) || findCol(['month']) || findCol(['period']) || null; }
+
+        function getBreakdown(dimCol, valCol, data) {
+            if (!dimCol || !valCol) return [];
+            const map = {};
+            data.forEach(r => {
+                const key = String(r[dimCol] ?? '').trim();
+                if (!key) return;
+                const v = Number(r[valCol]);
+                if (!map[key]) map[key] = 0;
+                map[key] += isNaN(v) ? 0 : v;
+            });
+            return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+        }
+
+        function getMonthData(dateCol, data) {
+            if (!dateCol || !data.length) return { months: {}, sortedKeys: [] };
+            const months = {};
+            data.forEach(r => {
+                let v = r[dateCol]; let key = '';
+                if (v instanceof Date) { key = v.getFullYear() + '-' + String(v.getMonth() + 1).padStart(2, '0'); }
+                else if (typeof v === 'string' && v) { const d = new Date(v); if (!isNaN(d)) key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); else key = v; }
+                if (key) { if (!months[key]) months[key] = []; months[key].push(r); }
+            });
+            return { months, sortedKeys: Object.keys(months).sort() };
+        }
+
+        function buildUnifiedCycleItems(data, qtyCol, valCol, daysElapsed) {
+            const brandCol = detectBrandCol(), gmCol = detectGmCol(), asmCol = detectAsmCol();
+            const totalQty = sumColForData(qtyCol, data);
+            const totalVal = sumColForData(valCol, data);
+
+            const projTotalQty = daysElapsed > 0 ? (totalQty / daysElapsed) + totalQty : 0;
+            const projTotalVal = daysElapsed > 0 ? (totalVal / daysElapsed) + totalVal : 0;
+
+            const items = [{ name: '⚡ ALL', dim: 'TOTAL', qty: totalQty, val: totalVal, projQty: projTotalQty, projVal: projTotalVal }];
+
+            const compCatCol = document.getElementById('compCategoryCol')?.value;
+            const isComparing = typeof comparisonSelected !== 'undefined' && comparisonSelected.size > 0;
+
+            function addBreakdown(dimCol, dimName) {
+                if (!dimCol) return;
+                const map = {};
+                data.forEach(r => {
+                    const key = String(r[dimCol] ?? '').trim();
+                    if (!key) return;
+                    if (isComparing && compCatCol === dimCol && !comparisonSelected.has(key)) return;
+
+                    const q = Number(r[qtyCol]); const v = Number(r[valCol]);
+                    if (!map[key]) map[key] = { qty: 0, val: 0 };
+                    map[key].qty += isNaN(q) ? 0 : q;
+                    map[key].val += isNaN(v) ? 0 : v;
+                });
+                Object.entries(map).sort((a, b) => b[1].val - a[1].val).forEach(([name, totals]) => {
+                    const pq = daysElapsed > 0 ? (totals.qty / daysElapsed) + totals.qty : 0;
+                    const pv = daysElapsed > 0 ? (totals.val / daysElapsed) + totals.val : 0;
+                    items.push({ name, dim: dimName, qty: totals.qty, val: totals.val, projQty: pq, projVal: pv });
+                });
+            }
+
+            addBreakdown(brandCol, 'BRAND');
+            addBreakdown(gmCol, 'GM');
+            addBreakdown(asmCol, 'ASM');
+
+            return items;
+        }
+
+        function updateKPIs() {
+            kpiAnimTimers.forEach(t => clearInterval(t));
+            kpiAnimTimers = [];
+
+            const sec = document.getElementById('kpiSection');
+            const qtyCol = detectQtyCol(), valCol = detectValueCol(), dateCol = detectDateCol(), brandCol = detectBrandCol();
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysElapsed = now.getDate();
+
+            const unifiedItems = buildUnifiedCycleItems(filteredData, qtyCol, valCol, daysElapsed);
+            const totalQty = unifiedItems[0]?.qty || 0;
+            const totalVal = unifiedItems[0]?.val || 0;
+            const projTotalQty = unifiedItems[0]?.projQty || 0;
+            const projTotalVal = unifiedItems[0]?.projVal || 0;
+
+            const dotsHTML = unifiedItems.map((_, i) => `<span class="kpi-dot${i === 0 ? ' active' : ''}"></span>`).join('');
+            const projPct = Math.min(100, (daysElapsed / daysInMonth) * 100);
+
+            let growthLabel = 'VS LAST MONTH';
+            let currentMonthVal = 0, lastMonthVal = 0, growthPct = 0;
+            const compCatCol = document.getElementById('compCategoryCol')?.value || brandCol;
+            if (typeof comparisonSelected !== 'undefined' && comparisonSelected.size >= 2 && compCatCol) {
+                const cats = [...comparisonSelected];
+                const aData = filteredData.filter(r => String(r[compCatCol]).trim() === cats[0]);
+                const bData = filteredData.filter(r => String(r[compCatCol]).trim() === cats[1]);
+                currentMonthVal = sumColForData(valCol, aData);
+                lastMonthVal = sumColForData(valCol, bData);
+                growthLabel = cats[0] + ' vs ' + cats[1];
+                growthPct = lastMonthVal > 0 ? ((currentMonthVal - lastMonthVal) / lastMonthVal) * 100 : (currentMonthVal > 0 ? 100 : 0);
+            } else if (dateCol) {
+                const { months } = getMonthData(dateCol, allData);
+                const curKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const prevKey = prevDate.getFullYear() + '-' + String(prevDate.getMonth() + 1).padStart(2, '0');
+                currentMonthVal = sumColForData(valCol, months[curKey] || []);
+                lastMonthVal = sumColForData(valCol, months[prevKey] || []);
+                growthPct = lastMonthVal > 0 ? ((currentMonthVal - lastMonthVal) / lastMonthVal) * 100 : (currentMonthVal > 0 ? 100 : 0);
+            }
+
+            const growthClass = growthPct > 0 ? 'positive' : growthPct < 0 ? 'negative' : 'neutral';
+            const growthArrow = growthPct > 0 ? '▲' : growthPct < 0 ? '▼' : '●';
+
+            sec.innerHTML = `
+            <div class="kpi-card fade-in delay-1" id="kpiQty">
+                <div class="kpi-card-top"><div class="kpi-label">📦 Quantity Sold</div><div class="kpi-icon">📦</div></div>
+                <div class="kpi-dim-label">TOTAL</div>
+                <div class="kpi-cat-header">⚡ ALL</div>
+                <div class="kpi-value-wrap"><div class="kpi-value">${fmtNum(totalQty)}</div></div>
+                <div class="kpi-sub">${unifiedItems.length - 1} entries across Brand/GM/ASM</div>
+                <div class="kpi-cycle-dots">${dotsHTML}</div>
+            </div>
+            <div class="kpi-card fade-in delay-2" id="kpiVal">
+                <div class="kpi-card-top"><div class="kpi-label">💰 Total Value</div><div class="kpi-icon">💰</div></div>
+                <div class="kpi-dim-label">TOTAL</div>
+                <div class="kpi-cat-header">⚡ ALL</div>
+                <div class="kpi-value-wrap"><div class="kpi-value">${fmtNum(totalVal)}</div></div>
+                <div class="kpi-sub">${unifiedItems.length - 1} entries across Brand/GM/ASM</div>
+                <div class="kpi-cycle-dots">${dotsHTML}</div>
+            </div>
+            <div class="kpi-card fade-in delay-3" id="kpiProj">
+                <div class="kpi-card-top"><div class="kpi-label">🎯 Projection This Month</div><div class="kpi-icon">🎯</div></div>
+                <div class="kpi-cat-header">⚡ ALL BRANDS</div>
+                <div class="kpi-proj-dual kpi-dual-row" style="transition:opacity .4s">
+                    <div class="kpi-dual-item"><span class="kpi-dual-label">Proj. Qty</span><span class="kpi-dual-val">${fmtNum(projTotalQty)}</span></div>
+                    <div class="kpi-dual-item"><span class="kpi-dual-label">Proj. Value</span><span class="kpi-dual-val">${fmtNum(projTotalVal)}</span></div>
+                </div>
+                <div class="kpi-sub">Formula: (Sales ÷ Elapsed Days) + Sales</div>
+                <div class="kpi-progress-bar"><div class="kpi-progress-fill" id="projProgress" style="background:linear-gradient(90deg,var(--success),var(--accent))"></div></div>
+                <div class="kpi-cycle-dots">${dotsHTML}</div>
+            </div>
+            <div class="kpi-card fade-in delay-4" id="kpiGrowth">
+                <div class="kpi-card-top"><div class="kpi-label">📈 Growth</div><div class="kpi-icon">📈</div></div>
+                <div class="kpi-cat-header">${growthLabel}</div>
+                <div class="kpi-value-wrap"><div class="kpi-value kpi-growth ${growthClass}" style="background:none;-webkit-text-fill-color:unset;font-size:1.6rem;">${growthArrow} ${growthPct >= 0 ? '+' : ''}${growthPct.toFixed(1)}%</div></div>
+                <div class="kpi-dual-row" style="margin-top:4px">
+                    <div class="kpi-dual-item"><span class="kpi-dual-label">${typeof comparisonSelected !== 'undefined' && comparisonSelected.size >= 2 ? Array.from(comparisonSelected)[0] : 'This Month'}</span><span class="kpi-dual-val" style="font-size:1rem">${fmtNum(currentMonthVal)}</span></div>
+                    <div class="kpi-dual-item"><span class="kpi-dual-label">${typeof comparisonSelected !== 'undefined' && comparisonSelected.size >= 2 ? Array.from(comparisonSelected)[1] : 'Last Month'}</span><span class="kpi-dual-val" style="font-size:1rem">${fmtNum(lastMonthVal)}</span></div>
+                </div>
+                <div class="kpi-progress-bar"><div class="kpi-progress-fill" id="growthProgress" style="background:linear-gradient(90deg,${growthPct >= 0 ? 'var(--success),var(--accent)' : 'var(--danger),var(--warn)'})"></div></div>
+            </div>`;
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const proj = document.getElementById('projProgress'); if (proj) proj.style.width = Math.min(projPct, 100) + '%';
+                    const gbar = document.getElementById('growthProgress'); if (gbar) gbar.style.width = Math.min(Math.abs(growthPct), 100) + '%';
+                }, 100);
+            });
+
+            const qtyItemsPass = unifiedItems.map(u => ({ name: u.name, dim: u.dim, value: u.qty }));
+            const valItemsPass = unifiedItems.map(u => ({ name: u.name, dim: u.dim, value: u.val }));
+            const projItemsPass = unifiedItems.map(u => ({ name: u.name, dim: u.dim, projQty: u.projQty, projVal: u.projVal }));
+
+            startGlobalKpiCycle(qtyItemsPass, valItemsPass, projItemsPass, 7000);
+            document.getElementById('comparisonSection').style.display = 'block';
+        }
+
+        // ===== COMPARISON FILTERS =====
+        function buildComparisonSelectors() {
+            const catSel = document.getElementById('compCategoryCol');
+            const valSel = document.getElementById('compValueCol');
+            const centerSel = document.getElementById('compCenterAxis');
+            catSel.innerHTML = ''; valSel.innerHTML = '';
+            if (centerSel) centerSel.innerHTML = '';
+
+            // Priority columns requested by user
+            const priority = ['GM', 'ASM', 'DATE', 'BRAND', 'BRANCH', 'MONTH', 'CATEGORY', 'STORE'];
+            const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
+
+            // Sort textCols so priority items come first
+            textCols.sort((a, b) => {
+                const aIdx = priority.indexOf(a.toUpperCase());
+                const bIdx = priority.indexOf(b.toUpperCase());
+                if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+                if (aIdx !== -1) return -1;
+                if (bIdx !== -1) return 1;
+                return a.localeCompare(b);
+            });
+
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            textCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; catSel.appendChild(o); });
+            numCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; valSel.appendChild(o); });
+
+            const dc = detectBrandCol(); if (dc) catSel.value = dc;
+            const dv = detectValueCol(); if (dv) valSel.value = dv;
+
+            updateComparisonCenterOptions();
+            buildComparisonChips();
+        }
+
+        function updateComparisonCenterOptions() {
+            const centerSel = document.getElementById('compCenterAxis');
+            if (!centerSel) return;
+            const currentVal = centerSel.value;
+            centerSel.innerHTML = '';
+            const catCol = document.getElementById('compCategoryCol').value;
+
+            // Priority: text cols first, then date cols, then number cols — all except the category col
+            const textCols = allHeaders.filter(h => columnTypes[h] === 'text' && h !== catCol);
+            const dateCols = allHeaders.filter(h => columnTypes[h] === 'date' && h !== catCol);
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number' && h !== catCol);
+            const allAxisCols = [...textCols, ...dateCols, ...numCols];
+
+            allAxisCols.forEach(h => {
+                const o = document.createElement('option');
+                o.value = h;
+                const typeTag = columnTypes[h] === 'date' ? ' 📅' : columnTypes[h] === 'number' ? ' #' : '';
+                o.textContent = h + typeTag;
+                centerSel.appendChild(o);
+            });
+
+            // Restore previous selection if still valid, else try to default to a date col
+            if (currentVal && allAxisCols.includes(currentVal)) {
+                centerSel.value = currentVal;
+            } else {
+                const preferDate = dateCols[0] || allAxisCols[0];
+                if (preferDate) centerSel.value = preferDate;
+            }
+        }
+
+        function buildComparisonChips() {
+            updateComparisonCenterOptions();
+            const catCol = document.getElementById('compCategoryCol').value;
+            const cont = document.getElementById('comparisonChips');
+            if (!catCol) { cont.innerHTML = ''; return; }
+            const cats = [...new Set(filteredData.map(r => String(r[catCol] ?? '').trim()))].filter(Boolean).sort();
+            comparisonSelected = new Set();
+            renderComparisonChips(cats);
+        }
+
+        function renderComparisonChips(cats) {
+            const cont = document.getElementById('comparisonChips');
+            if (!cats) {
+                const catCol = document.getElementById('compCategoryCol').value;
+                cats = [...new Set(filteredData.map(r => String(r[catCol] ?? '').trim()))].filter(Boolean).sort();
+            }
+            cont.innerHTML = cats.map(c => {
+                const sel = comparisonSelected.has(c) ? 'selected' : '';
+                return `<span class="comparison-chip ${sel}" onclick="toggleCompChip('${c.replace(/'/g, "\\'")}')">${c}${sel ? ' <span class="chip-x">✕</span>' : ''}</span>`;
+            }).join('');
+        }
+
+        function toggleCompChip(cat) {
+            if (comparisonSelected.has(cat)) comparisonSelected.delete(cat);
+            else comparisonSelected.add(cat);
+            renderComparisonChips();
+            updateComparison();
+        }
+
+        function clearComparison() {
+            comparisonSelected.clear();
+            renderComparisonChips();
+            updateComparison();
+        }
+
+        function updateComparison() {
+            applyFilters();
+        }
+
+
+        // ===== AXIS SELECTORS =====
+        function buildAxisSelectors() {
+            const xSel = document.getElementById('chartXAxis'), ySel = document.getElementById('chartYAxis');
+            xSel.innerHTML = ''; ySel.innerHTML = '';
+            const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            (textCols.length ? textCols : allHeaders).forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; xSel.appendChild(o) });
+            numCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; ySel.appendChild(o) });
+            if (!numCols.length) { const o = document.createElement('option'); o.value = '__count__'; o.textContent = 'Row Count'; ySel.appendChild(o) }
+        }
+
+        // ===== CHARTS =====
+        function updateCharts() {
+            const xCol = document.getElementById('chartXAxis').value;
+            const yCol = document.getElementById('chartYAxis').value;
+            const agg = document.getElementById('chartAgg').value;
+            const topNVal = document.getElementById('chartTopN').value;
+
+            const groups = {};
+            filteredData.forEach(r => {
+                const key = String(r[xCol] ?? '');
+                if (!groups[key]) groups[key] = { sum: 0, count: 0, min: Infinity, max: -Infinity, vals: [] };
+                const v = yCol === '__count__' ? 1 : Number(r[yCol]);
+                if (!isNaN(v)) { groups[key].sum += v; groups[key].count++; groups[key].vals.push(v); groups[key].min = Math.min(groups[key].min, v); groups[key].max = Math.max(groups[key].max, v) } else { groups[key].count++ }
+            });
+            let entries = Object.entries(groups).map(([k, g]) => {
+                let val = 0;
+                if (agg === 'sum') val = g.sum; else if (agg === 'count') val = g.count; else if (agg === 'avg') val = g.count ? g.sum / g.count : 0; else if (agg === 'min') val = g.min === Infinity ? 0 : g.min; else val = g.max === -Infinity ? 0 : g.max;
+                return { label: k, value: val };
+            });
+            entries.sort((a, b) => b.value - a.value);
+            if (topNVal !== 'all') entries = entries.slice(0, parseInt(topNVal));
+            const labels = entries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
+            const values = entries.map(e => e.value);
+            const colors = entries.map((_, i) => COLORS[i % COLORS.length]);
+
+            document.getElementById('barChartTitle').textContent = agg.charAt(0).toUpperCase() + agg.slice(1) + ' of ' + yCol + ' by ' + xCol;
+            document.getElementById('doughnutChartTitle').textContent = 'Distribution: ' + xCol;
+            document.getElementById('lineChartTitle').textContent = 'Trend: ' + yCol + ' by ' + xCol;
+
+            // Shared hover interaction plugin for x-axis glow + bold
+            const hoverHighlightPlugin = {
+                id: 'hoverHighlight',
+                afterEvent(chart, args) {
+                    const evt = args.event;
+                    if (evt.type === 'mousemove') {
+                        const elements = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+                        chart._hoveredIndex = elements.length ? elements[0].index : -1;
+                        chart.update('none');
+                    } else if (evt.type === 'mouseout') {
+                        chart._hoveredIndex = -1;
+                        chart.update('none');
+                    }
+                }
+            };
+
+            const barTitle = agg.charAt(0).toUpperCase() + agg.slice(1) + ' of ' + yCol + ' by ' + xCol;
+            const doughnutTitle = 'Distribution: ' + yCol + ' by ' + xCol;
+            const lineTitle = 'Trend: ' + yCol + ' by ' + xCol;
+
+            if (chartInstances.bar) chartInstances.bar.destroy();
+            chartInstances.bar = new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: yCol, data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1, borderRadius: 6 }] },
+                plugins: [ChartDataLabels, hoverHighlightPlugin],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: barTitle, color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' }, padding: { bottom: 8 } },
+                        legend: { display: true, labels: { color: '#e2e8f0', font: { size: 11, family: 'Inter' }, boxWidth: 14, padding: 12 } },
+                        datalabels: {
+                            anchor: 'center', align: 'center', color: '#fff', font: { size: 9, weight: '700', family: 'Inter' },
+                            formatter: v => fmtShort(v),
+                            textShadowBlur: 4, textShadowColor: 'rgba(0,0,0,0.6)',
+                            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0
+                        },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtNum(ctx.raw) } }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: ctx => ctx.chart._hoveredIndex === ctx.index ? '#06b6d4' : '#94a3b8',
+                                font: ctx => ({ size: 10, weight: ctx.chart._hoveredIndex === ctx.index ? '800' : '400', family: 'Inter' }),
+                                maxRotation: 45, textStrokeColor: ctx => ctx.chart._hoveredIndex === ctx.index ? 'rgba(6,182,212,0.3)' : 'transparent', textStrokeWidth: ctx => ctx.chart._hoveredIndex === ctx.index ? 3 : 0
+                            },
+                            grid: { color: 'rgba(255,255,255,.04)' }
+                        },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } }
+                    }
+                }
+            });
+
+            if (chartInstances.doughnut) chartInstances.doughnut.destroy();
+            chartInstances.doughnut = new Chart(document.getElementById('doughnutChart'), {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1 }] },
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '60%',
+                    plugins: {
+                        title: { display: true, text: doughnutTitle, color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' }, padding: { bottom: 8 } },
+                        legend: { position: 'right', labels: { color: '#e2e8f0', font: { size: 10, family: 'Inter' }, padding: 10, boxWidth: 12 } },
+                        datalabels: {
+                            color: '#fff', font: { size: 9, weight: '700', family: 'Inter' },
+                            formatter: (v, ctx) => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total ? ((v / total) * 100).toFixed(1) + '%' : '';
+                                return pct;
+                            },
+                            textShadowBlur: 4, textShadowColor: 'rgba(0,0,0,0.7)',
+                            display: ctx => { const total = ctx.dataset.data.reduce((a, b) => a + b, 0); return total ? (ctx.dataset.data[ctx.dataIndex] / total) > 0.04 : false; }
+                        },
+                        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtNum(ctx.raw) } }
+                    }
+                }
+            });
+
+            if (chartInstances.line) chartInstances.line.destroy();
+            chartInstances.line = new Chart(document.getElementById('lineChart'), {
+                type: 'line',
+                data: { labels, datasets: [{ label: yCol, data: values, borderColor: colors[0], backgroundColor: colors[0] + '22', fill: true, tension: 0.3, pointBackgroundColor: colors[0], pointBorderColor: '#fff', pointRadius: 4, pointHoverRadius: 7 }] },
+                plugins: [ChartDataLabels, hoverHighlightPlugin],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: lineTitle, color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' }, padding: { bottom: 8 } },
+                        legend: { display: true, labels: { color: '#e2e8f0', font: { size: 11, family: 'Inter' }, boxWidth: 14, padding: 12 } },
+                        datalabels: {
+                            anchor: 'end', align: 'top', color: '#e2e8f0', font: { size: 9, weight: '600', family: 'Inter' },
+                            formatter: v => fmtShort(v),
+                            backgroundColor: 'rgba(11,15,26,0.6)', borderRadius: 4, padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0
+                        },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtNum(ctx.raw) } }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: ctx => ctx.chart._hoveredIndex === ctx.index ? '#06b6d4' : '#94a3b8',
+                                font: ctx => ({ size: 10, weight: ctx.chart._hoveredIndex === ctx.index ? '800' : '400', family: 'Inter' }),
+                                maxRotation: 45
+                            },
+                            grid: { color: 'rgba(255,255,255,.04)' }
+                        },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } }
+                    }
+                }
+            });
+        }
+
+        function showMiniCard(xLabel, series, value, yCol) {
+            document.getElementById('mcTitle').textContent = series + ' - ' + xLabel;
+            document.getElementById('mcBody').innerHTML = `
+                <div style="margin-bottom:8px"><span style="color:var(--text3)">Category:</span> <strong>${xLabel}</strong></div>
+                <div style="margin-bottom:8px"><span style="color:var(--text3)">Comparison Entity:</span> <strong>${series}</strong></div>
+                <div style="margin-bottom:8px"><span style="color:var(--text3)">${yCol}:</span> <strong style="color:var(--accent);font-size:1.2rem">${fmtNum(value)}</strong></div>
+            `;
+            document.getElementById('miniCardOverlay').style.display = 'flex';
+        }
+
+        function switchCompView(mode) {
+            document.getElementById('viewPyramidContainer').style.display = mode === 'pyramid' ? 'block' : 'none';
+            document.getElementById('viewComboContainer').style.display = mode === 'combo' ? 'block' : 'none';
+
+            document.getElementById('btnViewPyramid').style.background = mode === 'pyramid' ? 'var(--accent)' : 'transparent';
+            document.getElementById('btnViewPyramid').style.color = mode === 'pyramid' ? 'white' : 'var(--text2)';
+
+            document.getElementById('btnViewCombo').style.background = mode === 'combo' ? 'var(--accent)' : 'transparent';
+            document.getElementById('btnViewCombo').style.color = mode === 'combo' ? 'white' : 'var(--text2)';
+
+            if (mode === 'combo') {
+                if (chartInstances.compCombo) chartInstances.compCombo.resize();
+            }
+        }
+
+        function updateComparisonCharts() {
+            const compWrap = document.getElementById('comparisonChartsWrapper');
+            const isComparing = (typeof comparisonSelected !== 'undefined' && comparisonSelected.size >= 1);
+            if (!isComparing) {
+                if (compWrap) compWrap.style.display = 'none';
+                return;
+            }
+            if (compWrap) compWrap.style.display = 'block';
+
+            const xColEl = document.getElementById('compCenterAxis');
+            const xCol = xColEl && xColEl.value ? xColEl.value : document.getElementById('chartXAxis').value;
+            const xColType = columnTypes[xCol] || 'text';
+
+            // Helper: format a raw cell value into a clean axis label
+            function fmtAxisKey(raw) {
+                if (raw === null || raw === undefined || raw === '') return '(empty)';
+                if (xColType === 'date') {
+                    const d = raw instanceof Date ? raw : new Date(raw);
+                    if (!isNaN(d)) return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+                }
+                return String(raw).trim();
+            }
+            let yCol = document.getElementById('compValueCol').value || detectValueCol();
+            const qtyCol = detectQtyCol();
+
+            const compMetric = document.getElementById('compMetricToggle') ? document.getElementById('compMetricToggle').value : 'value';
+            if (compMetric === 'qty' && qtyCol) {
+                yCol = qtyCol;
+            }
+            const agg = document.getElementById('chartAgg').value;
+            const topNVal = document.getElementById('chartTopN').value;
+            const compCatCol = document.getElementById('compCategoryCol')?.value;
+
+            const seriesNames = [...comparisonSelected].slice(0, 2); // Limit to 2 for Butterfly
+            const xGroups = {};
+
+            let totalCompSum = 0;
+            let seriesSums = { 0: 0, 1: 0 };
+
+            filteredData.forEach(r => {
+                const xKey = fmtAxisKey(r[xCol]);
+                const sKey = String(r[compCatCol] ?? '').trim();
+
+                let sIndex = seriesNames.indexOf(sKey);
+                if (sIndex === -1 && seriesNames.length > 0) return;
+
+                if (!xGroups[xKey]) {
+                    xGroups[xKey] = { totalQty: 0 };
+                    seriesNames.forEach(s => xGroups[xKey][s] = { sum: 0, count: 0, min: Infinity, max: -Infinity, vals: [] });
+                }
+                const g = xGroups[xKey][sKey];
+                const v = yCol === '__count__' ? 1 : Number(r[yCol]);
+                const qv = Number(r[qtyCol]);
+
+                if (!isNaN(v)) {
+                    if (g) { g.sum += v; g.count++; g.vals.push(v); g.min = Math.min(g.min, v); g.max = Math.max(g.max, v); }
+                    if (sIndex !== -1) seriesSums[sIndex] += v;
+                    totalCompSum += v;
+                } else if (g) { g.count++ }
+                if (!isNaN(qv)) xGroups[xKey].totalQty += qv;
+            });
+
+            let xEntries = Object.entries(xGroups).map(([k, mapData]) => {
+                let totalVal = 0;
+                seriesNames.forEach(s => {
+                    const g = mapData[s]; let val = 0;
+                    if (agg === 'sum') val = g.sum; else if (agg === 'count') val = g.count; else if (agg === 'avg') val = g.count ? g.sum / g.count : 0; else if (agg === 'min') val = g.min === Infinity ? 0 : g.min; else val = g.max === -Infinity ? 0 : g.max;
+                    mapData[s].finalVal = val; totalVal += val;
+                });
+                return { label: k, totalVal, totalQty: mapData.totalQty, sMap: mapData };
+            });
+
+            xEntries.sort((a, b) => b.totalVal - a.totalVal);
+            if (topNVal !== 'all') xEntries = xEntries.slice(0, parseInt(topNVal));
+
+            // 1. Gauge Chart (Market Share / Win Ratio)
+            if (chartInstances.compGauge) chartInstances.compGauge.destroy();
+
+            let gaugeLabels = [];
+            let gaugeData = [];
+            let gaugeColors = [];
+            let gaugeBorders = [];
+
+            document.getElementById('gaugeChartTitle').textContent = 'Share Analysis';
+
+            if (seriesNames.length === 2) {
+                gaugeLabels = [seriesNames[0], seriesNames[1]];
+                gaugeData = [seriesSums[0], seriesSums[1]];
+                gaugeColors = ['#06b6d4cc', '#ec4899cc'];
+                gaugeBorders = ['#06b6d4', '#ec4899'];
+
+                const total = seriesSums[0] + seriesSums[1];
+                const pct0 = total ? ((seriesSums[0] / total) * 100).toFixed(1) : 0;
+                const pct1 = total ? ((seriesSums[1] / total) * 100).toFixed(1) : 0;
+                document.getElementById('gaugeDetails').innerHTML = `<span style="color:var(--accent);font-weight:700;font-size:1.1rem">${pct0}%</span> vs <span style="color:var(--accent3);font-weight:700;font-size:1.1rem">${pct1}%</span>`;
+            } else if (seriesNames.length === 1) {
+                gaugeLabels = [seriesNames[0], 'Rest of Segment'];
+
+                let totalSegmentVal = 0;
+                filteredData.forEach(r => {
+                    const v = yCol === '__count__' ? 1 : Number(r[yCol]);
+                    if (!isNaN(v)) totalSegmentVal += v;
+                });
+
+                const rest = Math.max(0, totalSegmentVal - seriesSums[0]);
+                gaugeData = [seriesSums[0], rest];
+                gaugeColors = ['#06b6d4cc', 'rgba(255,255,255,0.05)'];
+                gaugeBorders = ['#06b6d4', 'rgba(255,255,255,0.1)'];
+
+                const total = seriesSums[0] + rest;
+                const pct0 = total ? ((seriesSums[0] / total) * 100).toFixed(1) : 0;
+                document.getElementById('gaugeDetails').innerHTML = `<span style="color:var(--accent);font-weight:700;font-size:1.1rem">${pct0}%</span> overall share`;
+            } else {
+                document.getElementById('gaugeDetails').innerHTML = 'Select categories to compare';
+            }
+
+            chartInstances.compGauge = new Chart(document.getElementById('compGaugeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: gaugeLabels,
+                    datasets: [{
+                        data: gaugeData,
+                        backgroundColor: gaugeColors,
+                        borderColor: gaugeBorders,
+                        borderWidth: 1
+                    }]
+                },
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    circumference: 180, rotation: 270, cutout: '80%',
+                    plugins: {
+                        title: { display: true, text: 'Share Analysis', color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' }, padding: { bottom: 4 } },
+                        legend: { display: true, position: 'bottom', labels: { color: '#e2e8f0', font: { size: 10, family: 'Inter' }, boxWidth: 12, padding: 8 } },
+                        datalabels: {
+                            color: '#fff', font: { size: 10, weight: '700', family: 'Inter' },
+                            formatter: (v, ctx) => { const total = ctx.dataset.data.reduce((a, b) => a + b, 0); return total ? ((v / total) * 100).toFixed(1) + '%' : ''; },
+                            textShadowBlur: 4, textShadowColor: 'rgba(0,0,0,0.7)',
+                            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0
+                        },
+                        tooltip: { callbacks: { label: function (context) { return context.label + ': ' + fmtNum(context.raw); } } }
+                    },
+                    onClick: (e, elements) => { if (elements.length) showMiniCard('Overall Selected', elements[0].index === 0 ? gaugeLabels[0] : gaugeLabels[1], elements[0].element.$context.raw, yCol); }
+                }
+            });
+
+            // 2. Butterfly / Population Chart
+            const maxBfVal = Math.max(0, ...xEntries.flatMap(e => seriesNames.map(s => e.sMap[s].finalVal)));
+            let bfHTML = '';
+            xEntries.forEach(e => {
+                const valA = seriesNames.length > 0 ? e.sMap[seriesNames[0]].finalVal : 0;
+                const valB = seriesNames.length > 1 ? e.sMap[seriesNames[1]].finalVal : 0;
+                const pctA = maxBfVal ? (valA / maxBfVal) * 100 : 0;
+                const pctB = maxBfVal ? (valB / maxBfVal) * 100 : 0;
+                bfHTML += `
+                <div class="bf-row fade-in">
+                    <div class="bf-left"><span class="bf-val">${fmtShort(valA)}</span><div class="bf-bar" style="width: ${pctA}%" onclick="showMiniCard('${e.label.replace(/'/g, "\\'")}', '${seriesNames[0] ? seriesNames[0].replace(/'/g, "\\'") : ''}', ${valA}, '${yCol}')" title="${fmtNum(valA)}"></div></div>
+                    <div class="bf-center" title="${e.label}">${e.label}</div>
+                    <div class="bf-right"><div class="bf-bar" style="width: ${pctB}%" onclick="showMiniCard('${e.label.replace(/'/g, "\\'")}', '${seriesNames[1] ? seriesNames[1].replace(/'/g, "\\'") : ''}', ${valB}, '${yCol}')" title="${fmtNum(valB)}"></div><span class="bf-val">${fmtShort(valB)}</span></div>
+                </div>`;
+            });
+            document.getElementById('butterflyChart').innerHTML = bfHTML || '<div style="text-align:center;color:var(--text3);padding:20px">No data available</div>';
+
+            // Update butterfly legend
+            const bfLegend = document.getElementById('bfLegend');
+            if (bfLegend) {
+                if (seriesNames.length >= 2) {
+                    document.getElementById('bfLegendA').textContent = seriesNames[0];
+                    document.getElementById('bfLegendB').textContent = seriesNames[1];
+                    bfLegend.style.display = 'flex';
+                } else if (seriesNames.length === 1) {
+                    document.getElementById('bfLegendA').textContent = seriesNames[0];
+                    document.getElementById('bfLegendB').textContent = '—';
+                    bfLegend.style.display = 'flex';
+                } else {
+                    bfLegend.style.display = 'none';
+                }
+            }
+
+            // 3. Dual-Axis Combo Chart
+            const labels = xEntries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
+            const datasets = seriesNames.map((sName, idx) => {
+                const sData = xEntries.map(e => e.sMap[sName].finalVal);
+                const color = COLORS[idx % COLORS.length];
+                return {
+                    type: 'bar', label: sName + ' (' + yCol + ')', data: sData, backgroundColor: color + 'cc', borderColor: color, borderWidth: 1, borderRadius: 6, yAxisID: 'y',
+                };
+            });
+
+            // Add Line Chart for Total Qty on Secondary Axis
+            if (qtyCol && qtyCol !== yCol && yCol !== '__count__') {
+                const qtyData = xEntries.map(e => e.totalQty);
+                datasets.push({
+                    type: 'line', label: 'Total ' + qtyCol, data: qtyData, borderColor: '#ec4899', backgroundColor: '#ec4899', fill: false, tension: 0.3, pointBackgroundColor: '#ec4899', pointBorderColor: '#fff', pointRadius: 4, pointHoverRadius: 6, yAxisID: 'y1'
+                });
+            }
+
+            if (chartInstances.compCombo) chartInstances.compCombo.destroy();
+            chartInstances.compCombo = new Chart(document.getElementById('compComboChart'), {
+                data: { labels, datasets },
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Dual-Axis Performance: ' + seriesNames.join(' vs '), color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' }, padding: { bottom: 8 } },
+                        legend: { display: true, labels: { color: '#e2e8f0', font: { size: 11, family: 'Inter' }, boxWidth: 14, padding: 12 } },
+                        datalabels: {
+                            anchor: 'end', align: 'top', color: '#e2e8f0', font: { size: 8, weight: '700', family: 'Inter' },
+                            formatter: v => fmtShort(v),
+                            backgroundColor: 'rgba(11,15,26,0.5)', borderRadius: 3, padding: { top: 1, bottom: 1, left: 3, right: 3 },
+                            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) { return context.dataset.label + ': ' + fmtNum(context.raw); }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
+                        y: { type: 'linear', display: true, position: 'left', ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } },
+                        y1: { type: 'linear', display: datasets.some(d => d.yAxisID === 'y1'), position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#ec4899', font: { size: 10 }, callback: v => fmtShort(v) } }
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const el = elements[0];
+                            const ds = datasets[el.datasetIndex];
+                            showMiniCard(labels[el.index], ds.label, ds.data[el.index], '');
+                        }
+                    }
+                }
+            });
+        }
+        function downloadChart(id) {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            const link = document.createElement('a');
+            link.download = id + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function downloadHTMLChart(id, name) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const buttons = el.querySelectorAll('.btn-ghost');
+            buttons.forEach(b => b.style.visibility = 'hidden');
+            html2canvas(el, {
+                backgroundColor: '#0b0f1a',
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = (name || id) + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                buttons.forEach(b => b.style.visibility = 'visible');
+            });
+        }
+
+        // ===== DATA TABLE =====
+        function renderTable() {
+            const thead = document.getElementById('dataTableHead');
+            const tbody = document.getElementById('dataTableBody');
+            thead.innerHTML = '<tr>' + allHeaders.map(h => {
+                let icon = '⇅'; if (sortCol === h) icon = sortDir === 'asc' ? '↑' : '↓';
+                return `<th onclick="sortTable('${h.replace(/'/g, "\\'")}')" class="${sortCol === h ? 'sorted' : ''}">${h} <span class="sort-icon">${icon}</span></th>`;
+            }).join('') + '</tr>';
+            const start = currentPage * pageSize, end = Math.min(start + pageSize, filteredData.length);
+            const pageData = filteredData.slice(start, end);
+            tbody.innerHTML = pageData.map(r => '<tr>' + allHeaders.map(h => {
+                let v = r[h]; if (v instanceof Date) v = v.toLocaleDateString();
+                return `<td title="${String(v ?? '').replace(/"/g, '&quot;')}">${v ?? ''}</td>`;
+            }).join('') + '</tr>').join('');
+            const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+            document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${totalPages} (${filteredData.length} rows)`;
+        }
+        function sortTable(col) {
+            if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc'; else { sortCol = col; sortDir = 'asc' }
+            const type = columnTypes[col];
+            filteredData.sort((a, b) => {
+                let va = a[col], vb = b[col];
+                if (type === 'number') { va = Number(va) || 0; vb = Number(vb) || 0 }
+                else { va = String(va ?? '').toLowerCase(); vb = String(vb ?? '').toLowerCase() }
+                if (va < vb) return sortDir === 'asc' ? -1 : 1; if (va > vb) return sortDir === 'asc' ? 1 : -1; return 0;
+            });
+            currentPage = 0; renderTable();
+        }
+        function changePage(d) {
+            const total = Math.ceil(filteredData.length / pageSize);
+            currentPage = Math.max(0, Math.min(total - 1, currentPage + d)); renderTable();
+        }
+        function changePageSize() { pageSize = parseInt(document.getElementById('pageSizeSelect').value); currentPage = 0; renderTable() }
+        function onTableSearch() { searchTerm = document.getElementById('tableSearch').value; applyFilters() }
+
+        // ===== EXPORTS =====
+        function exportCSV() {
+            const rows = [allHeaders.join(','), ...filteredData.map(r => allHeaders.map(h => { let v = String(r[h] ?? ''); if (v.includes(',')) v = '"' + v + '"'; return v }).join(','))];
+            downloadBlob(new Blob([rows.join('\n')], { type: 'text/csv' }), 'filtered_data.csv');
+        }
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(filteredData, { header: allHeaders });
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+            XLSX.writeFile(wb, 'filtered_data.xlsx');
+        }
+        function downloadBlob(blob, name) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u) }
+
+        // ===== CONVERSION ANALYTICS (PREMIUM) =====
+        let convChartInstances = { breakdown: null };
+        let convSelectedMetrics = new Set();
+        const CONV_TARGET_DEFAULT = 60;
+
+        function detectConversionCols() {
+            const keywords = ['acc', 'accessory', 'insurance', 'ins', 'emi', 'credit', 'debit', 'upi', 'warranty', 'extend', 'screen', 'protect', 'finance'];
+            return allHeaders.filter(h => {
+                if (columnTypes[h] !== 'number') return false;
+                const norm = h.toLowerCase().replace(/[\s_]/g, '');
+                return keywords.some(k => norm.includes(k));
+            });
+        }
+
+        function buildConversionSelectors() {
+            const baseSel = document.getElementById('convBaseCol');
+            const breakSel = document.getElementById('convBreakdownCol');
+            if (!baseSel || !breakSel) return;
+            baseSel.innerHTML = ''; breakSel.innerHTML = '';
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            numCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; baseSel.appendChild(o); });
+            const qtyCol = detectQtyCol();
+            if (qtyCol) baseSel.value = qtyCol;
+            const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
+            textCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; breakSel.appendChild(o); });
+            const bc = detectBrandCol() || findCol(['store']) || findCol(['branch']);
+            if (bc) breakSel.value = bc;
+            rebuildConvMetrics();
+        }
+
+        function rebuildConvMetrics() {
+            const wrap = document.getElementById('convMetricsList');
+            if (!wrap) return;
+            const autoDetected = detectConversionCols();
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            const baseCol = document.getElementById('convBaseCol')?.value;
+            convSelectedMetrics = new Set(autoDetected.slice(0, 4));
+            renderConvChips();
+            updateConversion();
+        }
+
+        function renderConvChips() {
+            const wrap = document.getElementById('convMetricsList');
+            if (!wrap) return;
+            const baseCol = document.getElementById('convBaseCol')?.value;
+            const autoDetected = detectConversionCols();
+            const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            wrap.innerHTML = numCols.filter(h => h !== baseCol).map(h => {
+                const isSel = convSelectedMetrics.has(h);
+                const isAuto = autoDetected.includes(h);
+                return `<span class="comparison-chip ${isSel ? 'selected' : ''}" style="${isAuto && !isSel ? 'border-color:var(--accent);' : ''}" onclick="toggleConvMetric('${h.replace(/'/g, "\\\\'")}')">${h}${isSel ? ' <span class="chip-x">✕</span>' : ''}</span>`;
+            }).join('');
+        }
+
+        function toggleConvMetric(col) {
+            if (convSelectedMetrics.has(col)) convSelectedMetrics.delete(col);
+            else convSelectedMetrics.add(col);
+            renderConvChips();
+            updateConversion();
+        }
+
+        function getConvTarget() {
+            return parseInt(document.getElementById('convTarget')?.value) || CONV_TARGET_DEFAULT;
+        }
+
+        function convColor(pct) { return pct >= 60 ? 'success' : pct >= 30 ? 'warn' : 'danger'; }
+        function convHex(pct) { return pct >= 60 ? '#10b981' : pct >= 30 ? '#f59e0b' : '#ef4444'; }
+        function hmClass(pct) { return pct >= 60 ? 'hm-green' : pct >= 30 ? 'hm-orange' : 'hm-red'; }
+
+        function buildGaugeSVG(pct, label, total, sold, color) {
+            const r = 54, c = 2 * Math.PI * r;
+            const clamped = Math.min(pct, 100);
+            const offset = c - (clamped / 100) * c;
+            const target = getConvTarget();
+            const targetAngle = (target / 100) * 360 - 90;
+            const tRad = targetAngle * Math.PI / 180;
+            const tx = 70 + (r - 4) * Math.cos(tRad), ty = 70 + (r - 4) * Math.sin(tRad);
+            const statusCls = convColor(pct);
+            const statusIcon = pct >= target ? '✓ On Target' : pct >= target * 0.5 ? '↗ Improving' : '↓ Below Target';
+            return `<div class="conv-gauge-card fade-in" style="--gc:${convHex(pct)}">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${convHex(pct)};border-radius:12px 12px 0 0;"></div>
+                <svg class="gauge-svg" viewBox="0 0 140 140">
+                    <circle class="gauge-bg" cx="70" cy="70" r="${r}"/>
+                    <circle class="gauge-fill" cx="70" cy="70" r="${r}" stroke="${convHex(pct)}" stroke-dasharray="${c}" stroke-dashoffset="${c}" style="stroke-dashoffset:${offset};transform:rotate(-90deg);transform-origin:center;"/>
+                    <circle cx="${tx}" cy="${ty}" r="3" fill="rgba(255,255,255,.5)"/>
+                    <text x="70" y="66" text-anchor="middle" class="gauge-center-text">${pct.toFixed(1)}%</text>
+                    <text x="70" y="82" text-anchor="middle" class="gauge-sub-text">of ${target}% target</text>
+                </svg>
+                <div class="gauge-label">${label}</div>
+                <div class="gauge-target-label">${fmtNum(sold)} / ${fmtNum(total)}</div>
+                <div class="gauge-status ${statusCls}">${statusIcon}</div>
+            </div>`;
+        }
+
+        function updateConversion() {
+            const baseCol = document.getElementById('convBaseCol')?.value;
+            const breakCol = document.getElementById('convBreakdownCol')?.value;
+            if (!baseCol || convSelectedMetrics.size === 0 || !filteredData.length) return;
+
+            const metrics = [...convSelectedMetrics];
+            const target = getConvTarget();
+            const convColors = ['#06b6d4', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7'];
+
+            // === Compute totals ===
+            let totalBase = 0;
+            const mTotals = {};
+            metrics.forEach(m => mTotals[m] = 0);
+            filteredData.forEach(r => {
+                const bv = Number(r[baseCol]); if (!isNaN(bv)) totalBase += bv;
+                metrics.forEach(m => { const mv = Number(r[m]); if (!isNaN(mv)) mTotals[m] += mv; });
+            });
+
+            // === SECTION 1: Gauges ===
+            const gaugesWrap = document.getElementById('convGaugesRow');
+            if (gaugesWrap) {
+                gaugesWrap.innerHTML = metrics.map(m => {
+                    const pct = totalBase > 0 ? (mTotals[m] / totalBase) * 100 : 0;
+                    return buildGaugeSVG(pct, m, totalBase, mTotals[m], convHex(pct));
+                }).join('');
+            }
+
+            // === SECTION 2A: Funnel ===
+            const funnelBody = document.getElementById('convFunnelBody');
+            if (funnelBody) {
+                const stages = [{ label: baseCol + ' (Base)', value: totalBase, pct: 100 }];
+                metrics.forEach(m => {
+                    const pct = totalBase > 0 ? (mTotals[m] / totalBase) * 100 : 0;
+                    stages.push({ label: m, value: mTotals[m], pct });
+                });
+                let html = '';
+                stages.forEach((s, i) => {
+                    const w = Math.max(30, s.pct);
+                    const bg = i === 0 ? 'linear-gradient(135deg,#06b6d4,#0891b2)' : `linear-gradient(135deg,${convHex(s.pct)},${convHex(s.pct)}dd)`;
+                    html += `<div class="funnel-stage" style="width:${w}%;background:${bg};" title="${s.label}: ${fmtNum(s.value)} (${s.pct.toFixed(1)}%)">
+                        <span class="funnel-stage-inner">${s.label}: ${fmtNum(s.value)} (${s.pct.toFixed(1)}%)</span>
+                    </div>`;
+                    if (i < stages.length - 1) {
+                        const drop = stages[i].pct - stages[i + 1].pct;
+                        html += `<div class="funnel-arrow">▼ <span style="font-size:.6rem;color:var(--danger);margin-left:4px;">-${drop.toFixed(1)}%</span></div>`;
+                    }
+                });
+                funnelBody.innerHTML = html;
+            }
+
+            // === SECTION 2B: Opportunity Loss Cards ===
+            const oppWrap = document.getElementById('convOppCards');
+            if (oppWrap) {
+                let oppHTML = '';
+                metrics.forEach(m => {
+                    const pct = totalBase > 0 ? (mTotals[m] / totalBase) * 100 : 0;
+                    const expected = Math.round(totalBase * target / 100);
+                    const missed = Math.max(0, expected - mTotals[m]);
+                    const belowTarget = pct < target;
+                    oppHTML += `<div class="opp-card ${belowTarget ? 'warning' : ''} fade-in">
+                        <div class="opp-card-icon">${belowTarget ? '⚠️' : '✅'}</div>
+                        <div class="opp-card-label">${m}</div>
+                        <div class="opp-card-value" style="color:${convHex(pct)}">${pct.toFixed(1)}%</div>
+                        <div class="opp-card-sub">Current: ${fmtNum(mTotals[m])} | Target: ${fmtNum(expected)}</div>
+                        ${belowTarget ? `<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.08);border-radius:8px;border-left:3px solid var(--danger);">
+                            <div style="font-size:.65rem;color:var(--danger);font-weight:700;text-transform:uppercase;">Missed Potential</div>
+                            <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin-top:2px;">+${fmtNum(missed)} units</div>
+                        </div>` : `<div style="margin-top:8px;padding:8px;background:rgba(16,185,129,.08);border-radius:8px;border-left:3px solid var(--success);">
+                            <div style="font-size:.65rem;color:var(--success);font-weight:700;">TARGET ACHIEVED ✓</div>
+                        </div>`}
+                    </div>`;
+                });
+                oppWrap.innerHTML = oppHTML;
+            }
+
+            // === SECTION 3: Breakdown Chart ===
+            if (!breakCol) return;
+            const breakGroups = {};
+            filteredData.forEach(r => {
+                const key = String(r[breakCol] ?? '').trim(); if (!key) return;
+                if (!breakGroups[key]) { breakGroups[key] = { base: 0 }; metrics.forEach(m => breakGroups[key][m] = 0); }
+                const bv = Number(r[baseCol]); if (!isNaN(bv)) breakGroups[key].base += bv;
+                metrics.forEach(m => { const mv = Number(r[m]); if (!isNaN(mv)) breakGroups[key][m] += mv; });
+            });
+            let breakEntries = Object.entries(breakGroups).sort((a, b) => b[1].base - a[1].base).slice(0, 20);
+            const bLabels = breakEntries.map(([k]) => k.length > 18 ? k.slice(0, 16) + '…' : k);
+            const bDatasets = metrics.map((m, i) => ({
+                label: m + ' Conv%', data: breakEntries.map(([, g]) => g.base > 0 ? +((g[m] / g.base) * 100).toFixed(2) : 0),
+                backgroundColor: convColors[i % convColors.length] + 'cc', borderColor: convColors[i % convColors.length], borderWidth: 1, borderRadius: 4
+            }));
+
+            document.getElementById('convBreakdownTitle').textContent = 'Conversion % by ' + breakCol;
+            if (convChartInstances.breakdown) convChartInstances.breakdown.destroy();
+            convChartInstances.breakdown = new Chart(document.getElementById('convBreakdownChart'), {
+                type: 'bar', data: { labels: bLabels, datasets: bDatasets },
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Addon Conversion % by ' + breakCol + ' (Target: ' + target + '%)', color: '#e2e8f0', font: { size: 13, weight: '700', family: 'Inter' } },
+                        legend: { display: true, labels: { color: '#e2e8f0', font: { size: 10, family: 'Inter' }, boxWidth: 12, padding: 8 } },
+                        datalabels: { anchor: 'end', align: 'top', color: '#e2e8f0', font: { size: 8, weight: '700' }, formatter: v => v > 0 ? v.toFixed(1) + '%' : '', backgroundColor: 'rgba(11,15,26,.5)', borderRadius: 3, padding: { top: 1, bottom: 1, left: 2, right: 2 }, display: ctx => ctx.dataset.data[ctx.dataIndex] > 0 },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw.toFixed(2) + '%' } },
+                        annotation: { annotations: { targetLine: { type: 'line', yMin: target, yMax: target, borderColor: 'rgba(255,255,255,.3)', borderWidth: 1, borderDash: [6, 3], label: { content: 'Target ' + target + '%', enabled: true } } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
+                        y: { ticks: { color: '#94a3b8', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,.06)' } }
+                    }
+                }
+            });
+
+            // === SECTION 4: Heatmap Table ===
+            const hHead = document.getElementById('convHeatHead');
+            const hBody = document.getElementById('convHeatBody');
+            if (hHead && hBody) {
+                hHead.innerHTML = '<tr><th style="min-width:120px;">' + breakCol + '</th><th>' + baseCol + '</th>' + metrics.map(m => '<th>' + m + '</th><th>' + m + ' %</th>').join('') + '</tr>';
+                hBody.innerHTML = breakEntries.map(([key, g]) => {
+                    return '<tr><td style="font-weight:600;color:var(--text);">' + key + '</td><td>' + fmtNum(g.base) + '</td>' +
+                        metrics.map(m => {
+                            const p = g.base > 0 ? (g[m] / g.base) * 100 : 0;
+                            return '<td>' + fmtNum(g[m]) + '</td><td><span class="hm-cell ' + hmClass(p) + '">' + p.toFixed(1) + '%</span></td>';
+                        }).join('') + '</tr>';
+                }).join('');
+            }
+        }
+
+
+        // Indian number format: Cr (crores), Lk (lakhs). Full value if < 1 lakh.
+        // No ₹ symbol — this is a generic number formatter used for both qty and value.
+        function fmtNum(n) {
+            if (n === null || n === undefined || isNaN(n)) return '0';
+            const abs = Math.abs(n);
+            const sign = n < 0 ? '-' : '';
+            if (abs >= 1e7) return sign + (abs / 1e7).toFixed(2) + ' Cr';
+            if (abs >= 1e5) return sign + (abs / 1e5).toFixed(2) + ' Lk';
+            // Below 1 lakh: show full value with Indian comma formatting
+            return sign + fmtIndian(abs);
+        }
+        function fmtIndian(n) {
+            if (!Number.isFinite(n)) return '0';
+            const parts = (Number.isInteger(n) ? n.toString() : n.toFixed(2)).split('.');
+            let intPart = parts[0];
+            const dec = parts[1] ? '.' + parts[1] : '';
+            // Indian grouping: last 3 digits, then groups of 2
+            if (intPart.length > 3) {
+                const last3 = intPart.slice(-3);
+                let rest = intPart.slice(0, -3);
+                let result = '';
+                while (rest.length > 2) { result = ',' + rest.slice(-2) + result; rest = rest.slice(0, -2); }
+                result = rest + result + ',' + last3;
+                intPart = result;
+            }
+            return intPart + dec;
+        }
+        // Short format for chart data labels & axis ticks (always abbreviated)
+        function fmtShort(n) {
+            if (n === null || n === undefined || isNaN(n)) return '0';
+            const abs = Math.abs(n);
+            const sign = n < 0 ? '-' : '';
+            if (abs >= 1e7) return sign + (abs / 1e7).toFixed(1) + ' Cr';
+            if (abs >= 1e5) return sign + (abs / 1e5).toFixed(1) + ' Lk';
+            if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + ' K';
+            return sign + (Number.isInteger(n) ? n.toString() : n.toFixed(1));
+        }
+        function fmtDate(d) { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); const y = dt.getFullYear(), m = String(dt.getMonth() + 1).padStart(2, '0'), dd = String(dt.getDate()).padStart(2, '0'); return y + '-' + m + '-' + dd }
+    </script>
+    <div id="miniCardOverlay" class="mini-card-overlay" style="display:none" onclick="this.style.display='none'">
+        <div class="mini-card" onclick="event.stopPropagation()">
+            <div class="mini-card-header"><span id="mcTitle">Details</span><button
+                    onclick="document.getElementById('miniCardOverlay').style.display='none'">✕</button></div>
+            <div class="mini-card-body" id="mcBody"></div>
+        </div>
+    </div>
+</body>
+
+</html>
