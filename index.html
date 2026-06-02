@@ -2630,20 +2630,36 @@
                                 </div>
                                 <div class="chart-wrap" style="height: 200px"><canvas id="compTrendChart"></canvas></div>
                             </div>
-                            <div class="chart-card" onclick="openFullscreen('combo')">
+                            <div class="chart-card" onclick="openFullscreen('compCombo')">
                                 <div class="chart-card-header">
-                                    <h4 id="comboChartTitle">Side-by-Side Comparison</h4>
+                                    <h4 id="compComboChartTitle">Combo View</h4>
                                     <div style="display:flex;gap:5px;align-items:center;">
                                         <button class="btn btn-xs btn-ghost"
                                             onclick="event.stopPropagation();downloadChart('compComboChart')"
                                             title="Download">⬇</button>
                                         <button class="btn btn-xs btn-ghost chart-expand-btn"
+                                            onclick="event.stopPropagation();openFullscreen('compCombo')"
                                             title="Fullscreen">⤡</button>
                                     </div>
                                 </div>
                                 <div class="chart-wrap" style="height:230px"><canvas id="compComboChart"></canvas></div>
                             </div>
-                            <div class="chart-card" onclick="openFullscreen('butterfly')">
+                            
+                            <div class="chart-card" onclick="openFullscreen('compBar')">
+                                <div class="chart-card-header">
+                                    <h4 id="compBarChartTitle">Grouped Bar Comparison</h4>
+                                    <div style="display:flex;gap:5px;align-items:center;">
+                                        <button class="btn btn-xs btn-ghost"
+                                            onclick="event.stopPropagation();downloadChart('compBarChart')"
+                                            title="Download">⬇</button>
+                                        <button class="btn btn-xs btn-ghost chart-expand-btn"
+                                            onclick="event.stopPropagation();openFullscreen('compBar')"
+                                            title="Fullscreen">⤡</button>
+                                    </div>
+                                </div>
+                                <div class="chart-wrap" style="height:230px"><canvas id="compBarChart"></canvas></div>
+                            </div>
+                            <div class="chart-card" onclick="openFullscreen('butterfly')" style="display:none;">
                                 <div class="chart-card-header">
                                     <div style="display:flex;gap:8px;align-items:center;">
                                         <h4 id="butterflyChartTitle">Population Structure</h4>
@@ -2840,11 +2856,6 @@
                 <div class="heatmap-wrap">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
                         <h4 style="font-size:.85rem;font-weight:700;color:var(--text2);">🗺️ Performance Heatmap</h4>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <span class="hm-cell hm-red" style="font-size:.6rem;">🔴 &lt;30%</span>
-                            <span class="hm-cell hm-orange" style="font-size:.6rem;">🟠 30-59%</span>
-                            <span class="hm-cell hm-green" style="font-size:.6rem;">🟢 ≥60%</span>
-                        </div>
                     </div>
                     <div class="table-scroll" style="max-height:400px;">
                         <table class="heatmap-table">
@@ -2887,7 +2898,7 @@
         // ===== GLOBAL STATE =====
         let workbook = null, allHeaders = [], allData = [], filteredData = [], columnTypes = {};
         let activeFilters = {}, sortCol = null, sortDir = 'asc', currentPage = 0, pageSize = 50, searchTerm = '';
-        let chartInstances = { bar: null, doughnut: null, line: null, compBar: null, compLine: null };
+        let chartInstances = { bar: null, doughnut: null, line: null, compBar: null, compLine: null, compTrend: null, compCombo: null, compGauge: null };
         const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7', '#14b8a6', '#f97316', '#6366f1', '#e11d48', '#84cc16', '#0ea5e9', '#d946ef'];
 
         // ===== LOADING OVERLAY HELPERS =====
@@ -2999,15 +3010,43 @@
             return null;
         }
 
-        function updateTimeSeriesContext() {
-            // Check if user has explicitly filtered by a single Month and Year
-            const mFilter = activeFilters['Month'];
-            tsCurrentMonth = (mFilter && mFilter.values && mFilter.values.size === 1)
-                ? Array.from(mFilter.values)[0].toUpperCase().substring(0, 3) : null;
+        function sortMonthYear(a, b) {
+            const getVal = (str) => {
+                if (typeof str !== 'string' || !str.includes('^')) return 0;
+                const p = str.split('^');
+                const mIdx = MONTHS.indexOf(p[0].toUpperCase());
+                if (mIdx === -1) return 0;
+                return parseInt(p[1]) * 100 + mIdx;
+            };
+            return getVal(a) - getVal(b);
+        }
 
-            const yFilter = activeFilters['Year'];
-            tsCurrentYear = (yFilter && yFilter.values && yFilter.values.size === 1)
-                ? String(parseInt(Array.from(yFilter.values)[0])) : null;
+        function formatMonthYear(str) {
+            if (typeof str === 'string' && str.includes('^')) {
+                const p = str.split('^');
+                const yr = p[1];
+                let bg = 'var(--accent)';
+                if (yr === '2024') bg = '#8b5cf6';
+                else if (yr === '2025') bg = '#06b6d4';
+                else if (yr === '2026') bg = '#ec4899';
+                else if (yr === '2027') bg = '#f59e0b';
+                else bg = '#10b981';
+                return `${p[0]} <span style="background:${bg}; color:#fff; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:800; margin-left:4px; opacity:0.9">${yr}</span>`;
+            }
+            return str || '(empty)';
+        }
+
+        function updateTimeSeriesContext() {
+            const mFilter = activeFilters['Month'];
+            if (mFilter && mFilter.values && mFilter.values.size === 1) {
+                const val = Array.from(mFilter.values)[0]; // e.g., "apr^2025"
+                const parts = val.split('^');
+                tsCurrentMonth = parts[0].toUpperCase().substring(0, 3);
+                if (parts.length > 1) tsCurrentYear = parts[1];
+            } else {
+                tsCurrentMonth = null;
+                tsCurrentYear = null;
+            }
 
             // Auto-detect latest month from data (works regardless of format)
             if (!tsCurrentMonth || !tsCurrentYear) {
@@ -3292,7 +3331,7 @@
                     allHeaders.forEach(h => {
                         if (h !== actualMonthCol && h !== valueCol) newRow[h] = r[h];
                     });
-                    newRow['Month'] = parsed ? parsed.month : String(r[actualMonthCol] || '').toUpperCase();
+                    newRow['Month'] = parsed ? (parsed.month.substring(0,3).toUpperCase() + '^' + parsed.year) : String(r[actualMonthCol] || '').toUpperCase();
                     newRow['Year'] = parsed ? parsed.year : '';
                     newRow['Sales Value'] = Number(r[valueCol] || r['Sales Value'] || 0) || 0;
                     return newRow;
@@ -3351,7 +3390,7 @@
                             });
                             const parsed = parseMonthHeader(mh);
                             if (parsed) {
-                                newRow['Month'] = parsed.month;
+                                newRow['Month'] = parsed.month.substring(0, 3).toUpperCase() + '^' + parsed.year;
                                 newRow['Year'] = parsed.year;
                             }
                             newRow['Sales Value'] = cellVal;
@@ -3365,6 +3404,23 @@
                     allData = newData;
                     columnTypes = detectColumnTypes(allHeaders, allData);
                 }
+            }
+
+            // ---- Final Pass: Ensure Month is formatted as MMM^YYYY if Year exists ----
+            const finalM = allHeaders.find(h => h.trim().toLowerCase() === 'month');
+            const finalY = allHeaders.find(h => h.trim().toLowerCase() === 'year');
+            if (finalM && finalY) {
+                allData.forEach(r => {
+                    const ms = String(r[finalM] || '').trim();
+                    if (ms && !ms.includes('^')) {
+                        const m3 = ms.substring(0, 3).toUpperCase();
+                        let yr = String(r[finalY] || '').trim();
+                        if (yr.length === 2) yr = '20' + yr;
+                        if (yr && m3) {
+                            r[finalM] = m3 + '^' + yr;
+                        }
+                    }
+                });
             }
         }
 
@@ -3385,7 +3441,8 @@
             saveRawDataToStorage();
             extractMonthYearCols();
             activeFilters = {}; sortCol = null; sortDir = 'asc'; currentPage = 0; searchTerm = '';
-            document.getElementById('tableSearch').value = '';
+            const ts = document.getElementById('tableSearch');
+            if (ts) ts.value = '';
             document.getElementById('dropzoneHero').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('rowCount').textContent = fmtNum(allData.length) + ' rows';
@@ -3430,16 +3487,20 @@
             const list = document.getElementById('filterList');
             list.innerHTML = '';
             allHeaders.forEach((h, idx) => {
+                if (h.trim().toLowerCase() === 'year') return; // Hide separate Year filter, Month filter covers it
                 const type = columnTypes[h];
                 const grp = document.createElement('div'); grp.className = 'filter-group'; grp.id = 'fg-' + idx;
                 let bodyHTML = '';
                 if (type === 'text') {
-                    const uniq = [...new Set(allData.map(r => String(r[h] ?? '')))].sort();
+                    let uniq = [...new Set(allData.map(r => String(r[h] ?? '')))];
+                    if (h.toLowerCase() === 'month') uniq.sort(sortMonthYear);
+                    else uniq.sort();
                     bodyHTML = `<div class="filter-select-actions"><button onclick="selectAllFilter(${idx},true)">Select All</button><button onclick="selectAllFilter(${idx},false)">Deselect All</button></div>`;
-                    bodyHTML += `<input class="filter-search" placeholder="Search..." oninput="filterSearchOptions(${idx},this.value)">`;
+                    bodyHTML += `<input class="filter-search" placeholder="Search... (Press Enter to apply)" onkeyup="filterSearchOptions(${idx},this.value, event)">`;
                     bodyHTML += `<div class="filter-options" id="fo-${idx}">`;
+
                     uniq.forEach((v, vi) => {
-                        bodyHTML += `<label class="filter-option" data-val="${v.replace(/"/g, '&quot;').toLowerCase()}"><input type="checkbox" checked data-col="${h}" data-val="${v.replace(/"/g, '&quot;')}" onchange="onTextFilterChange()"> <span>${v || '(empty)'}</span></label>`;
+                        bodyHTML += `<label class="filter-option" data-val="${v.replace(/"/g, '&quot;').toLowerCase()}"><input type="checkbox" checked data-col="${h}" data-val="${v.replace(/"/g, '&quot;')}" onchange="onTextFilterChange()"> <span>${formatMonthYear(v)}</span><a href="#" onclick="selectOnlyFilter(event, ${idx}, '${v.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="font-size:11px; color:var(--accent); text-decoration:none; margin-left:auto; font-weight:600;">Only</a></label>`;
                     });
                     bodyHTML += `</div>`;
                 } else if (type === 'number') {
@@ -3481,10 +3542,22 @@
             }
         });
 
-        function filterSearchOptions(idx, term) {
+        function filterSearchOptions(idx, term, event) {
             const opts = document.querySelectorAll('#fo-' + idx + ' .filter-option');
             term = term.toLowerCase();
             opts.forEach(o => { o.style.display = o.dataset.val.includes(term) ? '' : 'none' });
+            if (event && event.key === 'Enter') {
+                const cbs = document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]');
+                cbs.forEach(cb => { cb.checked = cb.parentElement.style.display !== 'none'; });
+                onTextFilterChange();
+            }
+        }
+        function selectOnlyFilter(event, idx, val) {
+            event.preventDefault();
+            event.stopPropagation();
+            const cbs = document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]');
+            cbs.forEach(cb => { cb.checked = (cb.dataset.val === val); });
+            onTextFilterChange();
         }
         function selectAllFilter(idx, checked) {
             document.querySelectorAll('#fo-' + idx + ' input[type=checkbox]').forEach(cb => { cb.checked = checked });
@@ -3569,8 +3642,7 @@
                     return true;
                 }) && (!searchTerm || Object.values(r).some(v => String(v).toLowerCase().includes(searchTerm.toLowerCase())));
             });
-            const fk = Object.keys(activeFilters);
-            document.getElementById('clearAllFiltersBtn').style.display = fk.length ? 'inline-flex' : 'none';
+            document.getElementById('clearAllFiltersBtn').style.display = Object.keys(activeFilters).length ? 'inline-flex' : 'none';
             document.getElementById('filteredCount').textContent = filteredData.length === allData.length ? 'All shown' : filteredData.length + ' of ' + allData.length;
             renderActiveFilterBadges(); 
             updateTimeSeriesContext(); // Set current month context before updating KPIs
@@ -3578,17 +3650,6 @@
             currentPage = 0; 
             renderTable();
             updateFilterVisibility();
-
-            // Smart Drill Down Logic
-            const brandCol = detectBrandCol(), gmCol = detectGmCol(), asmCol = detectAsmCol(), branchCol = findCol(['branch']) || findCol(['store']);
-            let bestX = null;
-            if (activeFilters[gmCol] && !activeFilters[asmCol]) bestX = asmCol;
-            else if (activeFilters[asmCol] && !activeFilters[branchCol]) bestX = branchCol;
-
-            if (bestX) {
-                const xSel = document.getElementById('chartXAxis');
-                if (xSel && xSel.value !== bestX) xSel.value = bestX;
-            }
 
             updateCharts();
 
@@ -3903,6 +3964,7 @@
         function detectBrandCol() { return findCol(['brand']) || findCol(['group', 'category']) || findCol(['category']) || findCol(['cat']) || findCol(['product']) || null; }
         function detectGmCol() { return findCol(['gm']) || findCol(['general', 'manager']) || null; }
         function detectAsmCol() { return findCol(['asm']) || findCol(['area', 'sales']) || findCol(['area', 'manager']) || null; }
+        function detectStoreCol() { return findCol(['store']) || findCol(['branch']) || findCol(['outlet']) || findCol(['dealer']) || findCol(['customer']) || findCol(['retailer']) || null; }
         function detectQtyCol() { return findCol(['qty']) || findCol(['quantity']) || findCol(['invoice', 'count']) || findCol(['inv', 'count']) || findCol(['count']) || null; }
         function detectValueCol() {
             // Always prefer the canonical 'Sales Value' column created by extractMonthYearCols
@@ -4141,11 +4203,21 @@
             const qPct = Math.min(100, (curQuarterMonths / 3) * 100);
             const yPct = Math.min(100, ((curMonthIndexInFy + 1) / 12) * 100);
 
+            let unfilteredContextTotal = 0;
+            allData.forEach(r => {
+                if (curM && curY) {
+                    const parsed = getRowMonthYear(r);
+                    if (!parsed || parsed.month !== curM.substring(0,3).toUpperCase() || parsed.year !== String(curY)) return;
+                }
+                unfilteredContextTotal += (Number(r[valCol]) || 0);
+            });
+
             let metric2Label = 'Contribution %';
             let metric2Value = '';
             if (initialItem.dim === 'TOTAL') {
                 metric2Label = 'Overall Contrib.';
-                metric2Value = '100%';
+                const pct = unfilteredContextTotal > 0 ? (initialItem.val / unfilteredContextTotal) * 100 : 0;
+                metric2Value = pct.toFixed(1) + '%';
             } else {
                 const pct = totalVal > 0 ? (initialItem.val / totalVal) * 100 : 0;
                 metric2Value = pct.toFixed(1) + '%';
@@ -4220,7 +4292,7 @@
                         <span class="kpi-dual-val" style="font-size:1rem;color:var(--accent)">${fmtNum(momCurrentVal)}</span>
                     </div>
                     <div class="kpi-dual-item">
-                        <span class="kpi-dual-label">${prevY_obj ? curM + ' ' + prevY_obj.year : 'Prev Year'}</span>
+                        <span class="kpi-dual-label">${prevY_obj ? curM + '-' + prevY_obj.year : 'Prev Year'}</span>
                         <span class="kpi-dual-val" style="font-size:1rem;color:var(--text3)">${fmtNum(yoyLastVal)}</span>
                     </div>
                 </div>
@@ -4509,10 +4581,21 @@
                         backgroundColor: ctx => {
                             const chart = ctx.chart;
                             const { ctx: c, chartArea } = chart;
-                            if (!chartArea) return colors[ctx.dataIndex % colors.length] + 'cc';
-                            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                            const col = colors[ctx.dataIndex % colors.length];
-                            g.addColorStop(0, col); g.addColorStop(1, col + '44'); return g;
+                            if (!chartArea || chartArea.bottom === chartArea.top) return colors[ctx.dataIndex % colors.length];
+                            try {
+                                const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                                const col = colors[ctx.dataIndex % colors.length];
+                                g.addColorStop(0, col); 
+                                // Hex-only logic to avoid hsl + '44' invalid string
+                                if (col.startsWith('#')) {
+                                    g.addColorStop(1, col + '44');
+                                } else {
+                                    g.addColorStop(1, 'rgba(0,0,0,0)');
+                                }
+                                return g;
+                            } catch (e) {
+                                return colors[ctx.dataIndex % colors.length];
+                            }
                         },
                         borderColor: colors, borderWidth: 2, borderRadius: 8, borderSkipped: false,
                         hoverBorderColor: '#fff', hoverBorderWidth: 2
@@ -4728,15 +4811,19 @@
                             </div>`;
                 };
 
+                const avgGrowth = (salesMomGrowth + salesYoyGrowth) / 2;
+                const bgHue = isFinite(avgGrowth) ? (avgGrowth > 0 ? 150 : 0) : 0;
+                const bgSat = Math.min(Math.abs(avgGrowth), 30);
+
                 rowsHtml += `
                     <tr>
                         <td><strong>${item}</strong></td>
                         <td style="text-align:right; font-weight:600;">${fmtShort(curSales)}</td>
-                        <td>${formatGrowth(salesMomGrowth, salesMomDiff, false)}</td>
-                        <td>${formatGrowth(salesYoyGrowth, salesYoyDiff, false)}</td>
+                        <td style="background:hsl(${bgHue}, ${bgSat}%, 15%)">${formatGrowth(salesMomGrowth, salesMomDiff, false)}</td>
+                        <td style="background:hsl(${bgHue}, ${bgSat}%, 15%)">${formatGrowth(salesYoyGrowth, salesYoyDiff, false)}</td>
                         <td style="text-align:right; font-weight:600;">${curConv.toFixed(1)}%</td>
-                        <td>${formatGrowth(convMomGrowth, convMomDiff, true)}</td>
-                        <td>${formatGrowth(convYoyGrowth, convYoyDiff, true)}</td>
+                        <td style="background:hsl(${bgHue}, ${bgSat}%, 15%)">${formatGrowth(convMomGrowth, convMomDiff, true)}</td>
+                        <td style="background:hsl(${bgHue}, ${bgSat}%, 15%)">${formatGrowth(convYoyGrowth, convYoyDiff, true)}</td>
                     </tr>
                 `;
             });
@@ -4969,7 +5056,7 @@
                         datalabels: {
                             anchor: 'end', align: 'top', color: '#e2e8f0', font: { size: 8, weight: '700', family: 'Inter' },
                             formatter: v => fmtShort(v),
-                            backgroundColor: 'rgba(11,15,26,0.5)', borderRadius: 3, padding: { top: 1, bottom: 1, left: 3, right: 3 },
+                            backgroundColor: 'rgba(11,15,26,0.65)', borderRadius: 3, padding: { top: 1, bottom: 1, left: 3, right: 3 },
                             display: ctx => ctx.dataset.data[ctx.dataIndex] > 0
                         },
                         tooltip: {
@@ -4992,7 +5079,33 @@
                 }
             });
 
-            // 4. Trend Chart
+            // 4. Bar Chart Comparison
+            const compColors = seriesNames.map((_, i) => COLORS[i % COLORS.length]);
+            const barDatasets = seriesNames.map((sName, i) => {
+                return {
+                    label: sName,
+                    data: xEntries.map(e => e.sMap[sName].finalVal || 0),
+                    backgroundColor: compColors[i] + 'cc',
+                    borderColor: compColors[i],
+                    borderWidth: 1,
+                    borderRadius: 4
+                };
+            });
+            if (chartInstances.compBar) chartInstances.compBar.destroy();
+            chartInstances.compBar = new Chart(document.getElementById('compBarChart'), {
+                type: 'bar',
+                data: { labels: xEntries.map(e => e.label.length > 15 ? e.label.slice(0, 13) + '...' : e.label), datasets: barDatasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top', labels: { color: '#94a3b8', font: { family: 'Inter' } } } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: v => fmtShort(v) } }
+                    }
+                }
+            });
+
+            // 5. Trend Chart
             if (chartInstances.compTrend) chartInstances.compTrend.destroy();
             const trendLabels = xEntries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
             const trendDatasets = seriesNames.map((sName, idx) => {
@@ -5058,24 +5171,24 @@
 
         // ===== FULLSCREEN CHART VIEWER =====
         let fsChartInstance = null;
+        const fullscreenTitles = {
+            'bar': 'Bar Chart',
+            'doughnut': 'Distribution',
+            'line': 'Trend',
+            'compGauge': 'Share Analysis',
+            'compTrend': 'Trend Comparison',
+            'compCombo': 'Combo View',
+            'compBar': 'Side-by-Side Comparison'
+        };
 
         function openFullscreen(chartType) {
             const overlay = document.getElementById('chartFsOverlay');
             overlay.dataset.chartType = chartType;
             overlay.classList.add('open');
 
-            const titleMap = {
-                'bar': document.getElementById('barChartTitle')?.textContent,
-                'doughnut': document.getElementById('doughnutChartTitle')?.textContent,
-                'line': document.getElementById('lineChartTitle')?.textContent,
-                'compGauge': 'Share Analysis',
-                'butterfly': document.getElementById('butterflyChartTitle')?.textContent || 'Population Structure',
-                'combo': document.getElementById('comboChartTitle')?.textContent || 'Side-by-Side',
-                'trend': document.getElementById('trendChartTitle')?.textContent || 'Trend Analysis'
-            };
-            document.getElementById('fsTitleText').textContent = (titleMap[chartType] || 'Chart') + ' — Fullscreen';
+            const isComp = ['compGauge', 'compTrend', 'compCombo', 'compBar'].includes(chartType);
+            document.getElementById('fsTitleText').textContent = (fullscreenTitles[chartType] || 'Chart') + ' — Fullscreen';
 
-            const isComp = ['compGauge', 'butterfly', 'combo', 'trend'].includes(chartType);
             document.getElementById('fsMainControls').style.display = isComp ? 'none' : 'flex';
             document.getElementById('fsCompControls').style.display = isComp ? 'flex' : 'none';
 
@@ -5123,7 +5236,7 @@
             canvasWrap.style.display = 'block';
             bfWrap.style.display = 'none';
             const canvas = document.getElementById('fsCanvas');
-            const isComp = ['compGauge', 'combo'].includes(chartType);
+            const isComp = ['compGauge', 'compCombo', 'compTrend', 'compBar'].includes(chartType);
 
             if (!isComp) {
                 const xCol = document.getElementById('fsChartXAxis').value;
@@ -5135,10 +5248,18 @@
                 renderFsMainChart(chartType, canvas, labels, values, colors, xCol, yCol);
             } else if (chartType === 'compGauge') {
                 renderFsCompGauge(canvas);
-            } else if (chartType === 'combo') {
+            } else if (chartType === 'compCombo') {
                 renderFsCombo(canvas);
-            } else if (chartType === 'trend') {
+            } else if (chartType === 'compTrend') {
                 renderFsTrend(canvas);
+            } else if (chartType === 'compBar') {
+                if (!chartInstances.compBar) return;
+                const src = chartInstances.compBar;
+                fsChartInstance = new Chart(canvas, {
+                    type: src.config.type,
+                    data: JSON.parse(JSON.stringify(src.data)),
+                    options: { ...src.options, maintainAspectRatio: false }
+                });
             }
         }
 
@@ -5406,6 +5527,7 @@
         function renderTable() {
             const thead = document.getElementById('dataTableHead');
             const tbody = document.getElementById('dataTableBody');
+            if (!thead || !tbody) return;
             thead.innerHTML = '<tr>' + allHeaders.map(h => {
                 let icon = '⇅'; if (sortCol === h) icon = sortDir === 'asc' ? '↑' : '↓';
 
@@ -5436,7 +5558,8 @@
             const pageData = filteredData.slice(start, end);
             tbody.innerHTML = pageData.map(r => '<tr>' + allHeaders.map(h => {
                 let v = r[h]; if (v instanceof Date) v = v.toLocaleDateString();
-                return `<td title="${String(v ?? '').replace(/"/g, '&quot;')}">${v ?? ''}</td>`;
+                const displayVal = (h === 'Month' || h.toLowerCase() === 'month') ? formatMonthYear(v) : (v ?? '');
+                return `<td title="${String(v ?? '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
             }).join('') + '</tr>').join('');
             const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
             document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${totalPages} (${filteredData.length} rows)`;
@@ -5738,7 +5861,8 @@
                     if (!m || !y) return { base: 0, metric: 0, pct: 0 };
                     let b = 0, mt = 0;
                     allData.forEach(r => {
-                        if (String(r['Month'] || '').toUpperCase() !== m.toUpperCase() || String(r['Year']) !== String(y)) return;
+                        const parsed = getRowMonthYear(r);
+                        if (!parsed || parsed.month !== m.toUpperCase() || parsed.year !== String(y)) return;
                         let valid = true;
                         for (let fKey of baseFilters) {
                             const f = activeFilters[fKey];
@@ -5879,7 +6003,10 @@
                     return '<tr><td style="font-weight:600;color:var(--text);">' + key + '</td><td>' + fmtNum(g.base) + '</td>' +
                         metrics.map(m => {
                             const p = g.base > 0 ? (g[m] / g.base) * 100 : 0;
-                            return '<td>' + fmtNum(g[m]) + '</td><td><span class="hm-cell ' + hmClass(p) + '">' + p.toFixed(1) + '%</span></td>';
+                            const hue = Math.min(130, Math.max(0, (p / 100) * 130)); // 0=red, 130=green
+                            const bg = `hsl(${hue}, 80%, 20%)`;
+                            const txt = `hsl(${hue}, 100%, 85%)`;
+                            return '<td>' + fmtNum(g[m]) + '</td><td style="background:' + bg + '; color:' + txt + '; text-align:center; font-weight:800; border-radius:4px; border: 1px solid rgba(255,255,255,0.05);">' + p.toFixed(1) + '%</td>';
                         }).join('') + '</tr>';
                 }).join('');
             }
@@ -6006,7 +6133,7 @@
 
             const gmCol = detectGmCol() || 'GM';
             const asmCol = detectAsmCol() || 'ASM';
-            const storeCol = findCol(['store', 'branch']) || 'Store';
+            const storeCol = detectStoreCol() || 'Store';
             const valCol = detectValueCol() || 'Sales Value';
             const dateCol = detectDateCol() || 'Month';
             const catCol = detectBrandCol() || 'Brand';
@@ -6029,7 +6156,12 @@
                     if (k) sliceKeys.add(k);
                 });
             }
-            const sortedSliceKeys = Array.from(sliceKeys).sort();
+            let sortedSliceKeys = Array.from(sliceKeys);
+            if (sliceCol && sliceCol.toLowerCase() === 'month') {
+                sortedSliceKeys.sort(sortMonthYear);
+            } else {
+                sortedSliceKeys.sort();
+            }
 
             // Build hierarchical tree
             const tree = { name: 'Root', val: 0, slices: {}, children: {} };
@@ -6072,7 +6204,9 @@
                         <tr style="background:var(--bg3); border-bottom:1px solid var(--glass-border);">
                             <th style="padding:12px; font-weight:600; color:var(--text2); position:sticky; left:0; background:var(--bg3); z-index:2; min-width:250px;">Hierarchy</th>
                             <th style="padding:12px; font-weight:600; color:var(--text2); text-align:right;">Total Sales</th>
-                            ${sortedSliceKeys.map(k => `<th style="padding:12px; font-weight:600; color:var(--text2); text-align:right;">${k}</th>`).join('')}
+                            ${sortedSliceKeys.map(k => {
+                                return `<th style="padding:12px; font-weight:600; color:var(--text2); text-align:right;">${formatMonthYear(k)}</th>`;
+                            }).join('')}
                         </tr>
                     </thead>
                     <tbody>
