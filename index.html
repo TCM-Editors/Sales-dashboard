@@ -2600,8 +2600,8 @@
 
                     <div id="comparisonChartsWrapper" style="display:none; margin-top:16px;">
                         <!-- Charts Area -->
-                        <div class="chart-grid comp-charts-grid" style="grid-template-columns: 1fr 1fr 2fr;">
-                            <div class="chart-card" onclick="openFullscreen('gauge')">
+                        <div class="chart-grid comp-charts-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="chart-card" onclick="openFullscreen('compGauge')">
                                 <div class="chart-card-header">
                                     <h4 id="gaugeChartTitle">Share Analysis</h4>
                                     <div style="display:flex;gap:5px;align-items:center;">
@@ -2612,25 +2612,23 @@
                                             title="Fullscreen">⤡</button>
                                     </div>
                                 </div>
-                                <div class="chart-wrap" style="height: 200px"><canvas id="compGaugeChart"></canvas>
-                                </div>
+                                <div class="chart-wrap" style="height: 200px"><canvas id="compGaugeChart"></canvas></div>
                                 <div id="gaugeDetails"
                                     style="text-align:center; font-size:0.85rem; color:var(--text2); margin-top:-20px;">
                                 </div>
                             </div>
-                            <div class="chart-card" onclick="openFullscreen('radar')">
+                            <div class="chart-card" onclick="openFullscreen('trend')">
                                 <div class="chart-card-header">
-                                    <h4 id="radarChartTitle">Performance Radar</h4>
+                                    <h4 id="trendChartTitle">Trend Analysis</h4>
                                     <div style="display:flex;gap:5px;align-items:center;">
                                         <button class="btn btn-xs btn-ghost"
-                                            onclick="event.stopPropagation();downloadChart('compRadarChart')"
+                                            onclick="event.stopPropagation();downloadChart('compTrendChart')"
                                             title="Download">⬇</button>
                                         <button class="btn btn-xs btn-ghost chart-expand-btn"
                                             title="Fullscreen">⤡</button>
                                     </div>
                                 </div>
-                                <div class="chart-wrap" style="height: 200px"><canvas id="compRadarChart"></canvas>
-                                </div>
+                                <div class="chart-wrap" style="height: 200px"><canvas id="compTrendChart"></canvas></div>
                             </div>
                             <div class="chart-card" onclick="openFullscreen('combo')">
                                 <div class="chart-card-header">
@@ -2643,41 +2641,31 @@
                                             title="Fullscreen">⤡</button>
                                     </div>
                                 </div>
-                                <div class="chart-wrap chart-wrap-wide" style="height:230px"><canvas
-                                        id="compComboChart"></canvas></div>
+                                <div class="chart-wrap" style="height:230px"><canvas id="compComboChart"></canvas></div>
                             </div>
-                        </div>
-                        <!-- Row 2: Butterfly -->
-                        <div class="chart-card" id="viewPyramidContainer" onclick="openFullscreen('butterfly')">
-                            <div class="chart-card-header">
-                                <h4 id="butterflyChartTitle">Population / Variance Analysis</h4>
-                                <div style="display:flex;gap:5px;align-items:center;">
-                                    <div id="bfLegend" class="bf-legend"
-                                        style="display:none;border:none;padding:2px 0;background:none;">
-                                        <div class="bf-legend-item">
-                                            <div class="bf-legend-swatch"
-                                                style="background:linear-gradient(90deg,var(--accent),#0891b2)"></div>
-                                            <span class="bf-legend-arrow">◀</span>
-                                            <span id="bfLegendA">Series A</span>
-                                        </div>
-                                        <div style="width:1px;height:24px;background:var(--glass-border)"></div>
-                                        <div class="bf-legend-item">
-                                            <span id="bfLegendB">Series B</span>
-                                            <span class="bf-legend-arrow">▶</span>
-                                            <div class="bf-legend-swatch"
-                                                style="background:linear-gradient(90deg,var(--accent2),var(--accent3))">
-                                            </div>
+                            <div class="chart-card" onclick="openFullscreen('butterfly')">
+                                <div class="chart-card-header">
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <h4 id="butterflyChartTitle">Population Structure</h4>
+                                        <div id="bfLegend"
+                                            style="display:none;gap:4px;align-items:center;font-size:0.75rem;padding-left:12px;border-left:1px solid rgba(255,255,255,0.1)">
+                                            <span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px"></span>
+                                            <span id="bfLegendA" style="color:var(--text2)"></span>
+                                            <span style="display:inline-block;width:10px;height:10px;background:var(--accent3);border-radius:2px;margin-left:6px"></span>
+                                            <span id="bfLegendB" style="color:var(--text2)"></span>
                                         </div>
                                     </div>
-                                    <div id="bfGrowth" style="display:none; margin-left:16px;"></div>
-                                    <button class="btn btn-xs btn-ghost"
-                                        onclick="event.stopPropagation();downloadHTMLChart('viewPyramidContainer','butterfly_chart')"
-                                        title="Download">⬇</button>
-                                    <button class="btn btn-xs btn-ghost chart-expand-btn" title="Fullscreen">⤡</button>
+                                    <div style="display:flex;gap:5px;align-items:center;">
+                                        <button class="btn btn-xs btn-ghost"
+                                            onclick="event.stopPropagation();downloadHTMLChart('butterflyChart', 'population_chart')"
+                                            title="Download">⬇</button>
+                                        <button class="btn btn-xs btn-ghost chart-expand-btn"
+                                            title="Fullscreen">⤡</button>
+                                    </div>
                                 </div>
+                                <div id="bfGrowth" style="display:none;margin-bottom:12px;"></div>
+                                <div class="chart-wrap" style="height:auto" id="butterflyChart"></div>
                             </div>
-                            <div class="butterfly-container" id="butterflyChart"
-                                style="padding: 10px; background: var(--bg2)"></div>
                         </div>
                     </div>
                 </section>
@@ -2692,32 +2680,32 @@
                                 <line x1="9" y1="3" x2="9" y2="21" />
                             </svg> Data Table</h3>
                         <div class="table-controls">
-                            <div class="search-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2">
-                                    <circle cx="11" cy="11" r="8" />
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                                </svg><input type="text" id="tableSearch" placeholder="Search all columns..."
-                                    oninput="onTableSearch()"></div>
-                            <div class="table-page-info"><span id="pageInfo">—</span><button
-                                    class="btn btn-xs btn-ghost" onclick="changePage(-1)">‹</button><button
-                                    class="btn btn-xs btn-ghost" onclick="changePage(1)">›</button><select
-                                    id="pageSizeSelect" class="control-select control-select-sm"
-                                    onchange="changePageSize()">
-                                    <option value="25">25</option>
-                                    <option value="50" selected>50</option>
-                                    <option value="100">100</option>
-                                    <option value="250">250</option>
-                                </select></div>
-                            <div class="export-btns"><button class="btn btn-sm btn-accent" onclick="exportCSV()">⬇
-                                    CSV</button><button class="btn btn-sm btn-accent-alt" onclick="exportExcel()">⬇
-                                    Excel</button></div>
+                            <button class="btn btn-sm btn-accent" id="toggleTableBtn" onclick="toggleDrillTable()">👁 Hide Table</button>
+                            <div class="export-btns">
+                                <button class="btn btn-sm btn-accent-alt" onclick="exportExcel()">⬇ Excel</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <table class="data-table">
-                            <thead id="dataTableHead"></thead>
-                            <tbody id="dataTableBody"></tbody>
-                        </table>
+                    <div id="drillTableWrapper" class="drill-layout" style="display:flex; gap:20px; transition: all 0.4s ease;">
+                        <div class="drill-sidebar" style="width:200px; flex-shrink:0; background:var(--bg2); padding:16px; border-radius:12px; border:1px solid var(--glass-border);">
+                            <h5 style="color:var(--text3); font-size:0.75rem; text-transform:uppercase; margin-bottom:12px; letter-spacing:1px;">Slice By</h5>
+                            <button class="btn btn-sm drill-slice-btn active" style="width:100%; text-align:left; margin-bottom:8px; background:var(--accent); color:#fff;" onclick="setDrillSlice('none', this)">Default (Hierarchy)</button>
+                            <button class="btn btn-sm btn-ghost drill-slice-btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="setDrillSlice('month', this)">Month</button>
+                            <button class="btn btn-sm btn-ghost drill-slice-btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="setDrillSlice('year', this)">Year</button>
+                            <button class="btn btn-sm btn-ghost drill-slice-btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="setDrillSlice('category', this)">Category / Brand</button>
+                            
+                            <hr style="border-color:var(--glass-border); margin:16px 0;">
+                            <div style="font-size:0.75rem; color:var(--text2); line-height:1.4;">
+                                Click a row to expand its hierarchy.<br><br>
+                                <b style="color:var(--accent);">GM ➔ ASM ➔ Store</b>
+                            </div>
+                        </div>
+                        <div class="drill-content" style="flex-grow:1; background:var(--bg2); border-radius:12px; border:1px solid var(--glass-border); padding:16px; min-height:400px;">
+                            <div id="drillContentContainer" style="display:flex; flex-direction:column; gap:8px;">
+                                <!-- Hierarchical rows injected here -->
+                                <div style="text-align:center; padding:40px; color:var(--text3);">Loading structure...</div>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -2793,6 +2781,14 @@
                     <div class="comparison-group">
                         <label>Breakdown By</label>
                         <select id="convBreakdownCol" class="control-select" onchange="updateConversion()"></select>
+                    </div>
+                    <div class="comparison-group">
+                        <label>Filter Dimension</label>
+                        <select id="convFilterDim" class="control-select" onchange="rebuildConvFilterVals()"></select>
+                    </div>
+                    <div class="comparison-group">
+                        <label>Filter Value</label>
+                        <select id="convFilterVal" class="control-select" onchange="updateConversion()"><option value="">-- All --</option></select>
                     </div>
                     <div class="comparison-group">
                         <label>Target %</label>
@@ -3372,7 +3368,21 @@
             }
         }
 
+        function saveRawDataToStorage() {
+            try {
+                const state = {
+                    fileName: document.getElementById('fileName').textContent || 'Restored Data',
+                    allData: allData,
+                    allHeaders: allHeaders
+                };
+                localStorage.setItem('twin_day_raw_data', JSON.stringify(state));
+            } catch (e) {
+                console.warn('Local storage quota exceeded. Data not cached.', e);
+            }
+        }
+
         function finishLoad() {
+            saveRawDataToStorage();
             extractMonthYearCols();
             activeFilters = {}; sortCol = null; sortDir = 'asc'; currentPage = 0; searchTerm = '';
             document.getElementById('tableSearch').value = '';
@@ -3562,7 +3572,11 @@
             const fk = Object.keys(activeFilters);
             document.getElementById('clearAllFiltersBtn').style.display = fk.length ? 'inline-flex' : 'none';
             document.getElementById('filteredCount').textContent = filteredData.length === allData.length ? 'All shown' : filteredData.length + ' of ' + allData.length;
-            renderActiveFilterBadges(); updateKPIs(); currentPage = 0; renderTable();
+            renderActiveFilterBadges(); 
+            updateTimeSeriesContext(); // Set current month context before updating KPIs
+            updateKPIs(); 
+            currentPage = 0; 
+            renderTable();
             updateFilterVisibility();
 
             // Smart Drill Down Logic
@@ -3593,6 +3607,7 @@
             updateComparisonCharts();
             updateConversion();
             updateFilterVisibility();
+            if (typeof renderDrillTable === 'function' && drillState.visible) renderDrillTable();
         }
 
         function clearAllFilters() {
@@ -3971,7 +3986,7 @@
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysElapsed = now.getDate();
 
-            const unifiedItems = buildUnifiedCycleItems(filteredData, qtyCol, valCol, daysElapsed);
+            const unifiedItems = buildUnifiedCycleItems(allData, qtyCol, valCol, daysElapsed);
             const totalQty = unifiedItems[0]?.qty || 0;
             const totalVal = unifiedItems[0]?.val || 0;
             const projTotalQty = unifiedItems[0]?.projQty || 0;
@@ -4129,8 +4144,8 @@
             let metric2Label = 'Contribution %';
             let metric2Value = '';
             if (initialItem.dim === 'TOTAL') {
-                metric2Label = 'FY Progress';
-                metric2Value = yPct.toFixed(0) + '%';
+                metric2Label = 'Overall Contrib.';
+                metric2Value = '100%';
             } else {
                 const pct = totalVal > 0 ? (initialItem.val / totalVal) * 100 : 0;
                 metric2Value = pct.toFixed(1) + '%';
@@ -4384,8 +4399,22 @@
             xSel.innerHTML = ''; ySel.innerHTML = '';
             const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
             const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
+            const validYCols = numCols.filter(h => {
+                const hl = h.toLowerCase();
+                return !hl.includes('year') && !hl.includes('month') && !hl.includes('date');
+            });
             (textCols.length ? textCols : allHeaders).forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; xSel.appendChild(o) });
-            numCols.forEach(h => { const o = document.createElement('option'); o.value = h; o.textContent = h; ySel.appendChild(o) });
+            
+            // Default to Sales Value if present, otherwise first valid numeric column
+            let defaultY = validYCols.find(h => h.toLowerCase().includes('sales') || h.toLowerCase().includes('value')) || validYCols[0] || numCols[0];
+            
+            numCols.forEach(h => { 
+                const o = document.createElement('option'); 
+                o.value = h; 
+                o.textContent = h; 
+                ySel.appendChild(o) 
+            });
+            if (defaultY) ySel.value = defaultY;
         }
 
         // ===== CHART DATA HELPER (shared by dashboard + fullscreen) =====
@@ -4510,8 +4539,8 @@
                     scales: {
                         x: {
                             ticks: {
-                                color: ctx => ctx.chart._hoveredIndex === ctx.index ? '#06b6d4' : '#94a3b8',
-                                font: ctx => ({ size: 10, weight: ctx.chart._hoveredIndex === ctx.index ? '800' : '400', family: 'Inter' }),
+                                color: '#94a3b8',
+                                font: { size: 10, family: 'Inter' },
                                 maxRotation: 45
                             },
                             grid: { color: 'rgba(255,255,255,.03)' }
@@ -4928,16 +4957,6 @@
                 };
             });
 
-            // Add Line Chart for Transaction Count on Secondary Axis
-            if (yCol !== '__count__') {
-                const countData = xEntries.map(e => {
-                    return seriesNames.reduce((sum, s) => sum + e.sMap[s].count, 0);
-                });
-                datasets.push({
-                    type: 'line', label: 'Transaction Count', data: countData, borderColor: '#ec4899', backgroundColor: '#ec4899', fill: false, tension: 0.3, pointBackgroundColor: '#ec4899', pointBorderColor: '#fff', pointRadius: 4, pointHoverRadius: 6, yAxisID: 'y1'
-                });
-            }
-
             if (chartInstances.compCombo) chartInstances.compCombo.destroy();
             chartInstances.compCombo = new Chart(document.getElementById('compComboChart'), {
                 data: { labels, datasets },
@@ -4961,8 +4980,7 @@
                     },
                     scales: {
                         x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
-                        y: { type: 'linear', display: true, position: 'left', ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } },
-                        y1: { type: 'linear', display: datasets.some(d => d.yAxisID === 'y1'), position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#ec4899', font: { size: 10 }, callback: v => fmtShort(v) } }
+                        y: { type: 'linear', display: true, position: 'left', ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } }
                     },
                     onClick: (e, elements) => {
                         if (elements.length > 0) {
@@ -4974,25 +4992,27 @@
                 }
             });
 
-            // 4. Radar Chart
-            if (chartInstances.compRadar) chartInstances.compRadar.destroy();
-            const radarLabels = xEntries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
-            const radarDatasets = seriesNames.map((sName, idx) => {
+            // 4. Trend Chart
+            if (chartInstances.compTrend) chartInstances.compTrend.destroy();
+            const trendLabels = xEntries.map(e => e.label.length > 20 ? e.label.slice(0, 18) + '…' : e.label);
+            const trendDatasets = seriesNames.map((sName, idx) => {
                 const sData = xEntries.map(e => e.sMap[sName].finalVal);
                 const color = COLORS[idx % COLORS.length];
                 return {
                     label: sName,
                     data: sData,
-                    backgroundColor: color + '33',
+                    backgroundColor: color + '22',
                     borderColor: color,
                     pointBackgroundColor: color,
-                    borderWidth: 2
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
                 };
             });
 
-            chartInstances.compRadar = new Chart(document.getElementById('compRadarChart'), {
-                type: 'radar',
-                data: { labels: radarLabels, datasets: radarDatasets },
+            chartInstances.compTrend = new Chart(document.getElementById('compTrendChart'), {
+                type: 'line',
+                data: { labels: trendLabels, datasets: trendDatasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
@@ -5001,12 +5021,8 @@
                         datalabels: { display: false }
                     },
                     scales: {
-                        r: {
-                            angleLines: { color: 'rgba(255,255,255,0.1)' },
-                            grid: { color: 'rgba(255,255,255,0.1)' },
-                            pointLabels: { color: '#94a3b8', font: { size: 10, family: 'Inter' } },
-                            ticks: { display: false }
-                        }
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.06)' } }
                     }
                 }
             });
@@ -5053,12 +5069,13 @@
                 'doughnut': document.getElementById('doughnutChartTitle')?.textContent,
                 'line': document.getElementById('lineChartTitle')?.textContent,
                 'compGauge': 'Share Analysis',
-                'butterfly': document.getElementById('butterflyChartTitle')?.textContent || 'Comparison',
-                'combo': document.getElementById('comboChartTitle')?.textContent || 'Side-by-Side'
+                'butterfly': document.getElementById('butterflyChartTitle')?.textContent || 'Population Structure',
+                'combo': document.getElementById('comboChartTitle')?.textContent || 'Side-by-Side',
+                'trend': document.getElementById('trendChartTitle')?.textContent || 'Trend Analysis'
             };
             document.getElementById('fsTitleText').textContent = (titleMap[chartType] || 'Chart') + ' — Fullscreen';
 
-            const isComp = ['compGauge', 'butterfly', 'combo'].includes(chartType);
+            const isComp = ['compGauge', 'butterfly', 'combo', 'trend'].includes(chartType);
             document.getElementById('fsMainControls').style.display = isComp ? 'none' : 'flex';
             document.getElementById('fsCompControls').style.display = isComp ? 'flex' : 'none';
 
@@ -5120,6 +5137,8 @@
                 renderFsCompGauge(canvas);
             } else if (chartType === 'combo') {
                 renderFsCombo(canvas);
+            } else if (chartType === 'trend') {
+                renderFsTrend(canvas);
             }
         }
 
@@ -5277,6 +5296,29 @@
                         x: { ticks: { color: '#94a3b8', font: { size: 14, family: 'Inter' }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
                         y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 13 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.05)' } },
                         y1: { type: 'linear', display: deepDatasets.some(d => d.yAxisID === 'y1'), position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#ec4899', font: { size: 13 }, callback: v => fmtShort(v) } }
+                    }
+                }
+            });
+        }
+
+        function renderFsTrend(canvas) {
+            if (!chartInstances.compTrend) return;
+            const src = chartInstances.compTrend;
+            const deepDatasets = src.data.datasets.map(d => ({ ...d, data: [...d.data] }));
+            fsChartInstance = new Chart(canvas, {
+                type: 'line',
+                data: { labels: [...src.data.labels], datasets: deepDatasets },
+                plugins: [ChartDataLabels],
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#e2e8f0', font: { size: 15, family: 'Inter', weight: '600' }, boxWidth: 16, padding: 16 } },
+                        datalabels: { anchor: 'end', align: 'top', color: '#e2e8f0', font: { size: 13, weight: '800', family: 'Inter' }, formatter: v => fmtShort(v), backgroundColor: 'rgba(11,15,26,0.65)', borderRadius: 5, padding: { top: 3, bottom: 3, left: 8, right: 8 }, display: ctx => ctx.dataset.data[ctx.dataIndex] > 0 },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtNum(ctx.raw) }, bodyFont: { size: 14 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 14, family: 'Inter' }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,.04)' } },
+                        y: { type: 'linear', position: 'left', ticks: { color: '#94a3b8', font: { size: 13 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(255,255,255,.05)' } }
                     }
                 }
             });
@@ -5469,13 +5511,17 @@
             const breakSel = document.getElementById('convBreakdownCol');
             if (!catSel || !metricSel || !breakSel) return;
 
+            const filterDimSel = document.getElementById('convFilterDim');
+
             catSel.innerHTML = ''; metricSel.innerHTML = ''; breakSel.innerHTML = '';
+            if (filterDimSel) filterDimSel.innerHTML = '<option value="">-- None --</option>';
 
             const textCols = allHeaders.filter(h => columnTypes[h] === 'text' || columnTypes[h] === 'date');
             textCols.forEach(h => {
                 const o = document.createElement('option'); o.value = h; o.textContent = h;
                 catSel.appendChild(o);
                 breakSel.appendChild(o.cloneNode(true));
+                if (filterDimSel) filterDimSel.appendChild(o.cloneNode(true));
             });
 
             const numCols = allHeaders.filter(h => columnTypes[h] === 'number');
@@ -5518,6 +5564,21 @@
             if (mobileVal) baseValSel.value = mobileVal;
 
             rebuildConvMetrics();
+        }
+
+        function rebuildConvFilterVals() {
+            const dim = document.getElementById('convFilterDim')?.value;
+            const valSel = document.getElementById('convFilterVal');
+            if (!valSel) return;
+            valSel.innerHTML = '<option value="">-- All --</option>';
+            if (!dim) { updateConversion(); return; }
+            
+            const uniqueVals = [...new Set(filteredData.map(r => String(r[dim] || '').trim()))].filter(Boolean).sort();
+            uniqueVals.forEach(v => {
+                const o = document.createElement('option'); o.value = v; o.textContent = v;
+                valSel.appendChild(o);
+            });
+            updateConversion();
         }
 
         function rebuildConvMetrics() {
@@ -5613,7 +5674,14 @@
             const metricCol = document.getElementById('convMetricCol')?.value;
             const breakCol = document.getElementById('convBreakdownCol')?.value;
 
-            if (!catCol || !baseVal || !metricCol || convSelectedMetrics.size === 0 || !filteredData.length) return;
+            const filterDim = document.getElementById('convFilterDim')?.value;
+            const filterVal = document.getElementById('convFilterVal')?.value;
+            let convData = filteredData;
+            if (filterDim && filterVal) {
+                convData = convData.filter(r => String(r[filterDim] || '').trim() === filterVal);
+            }
+
+            if (!catCol || !baseVal || !metricCol || convSelectedMetrics.size === 0 || !convData.length) return;
 
             const metrics = [...convSelectedMetrics];
             const target = getConvTarget();
@@ -5626,7 +5694,7 @@
 
             const breakGroups = {}; // For Breakdown chart
 
-            filteredData.forEach(r => {
+            convData.forEach(r => {
                 const category = String(r[catCol] || '').trim();
                 const mv = Number(r[metricCol]) || 0;
                 if (!category) return;
@@ -5856,6 +5924,207 @@
             return sign + (Number.isInteger(n) ? n.toString() : n.toFixed(1));
         }
         function fmtDate(d) { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); const y = dt.getFullYear(), m = String(dt.getMonth() + 1).padStart(2, '0'), dd = String(dt.getDate()).padStart(2, '0'); return y + '-' + m + '-' + dd }
+
+        // ===== LOCAL STORAGE AUTO-RESTORE =====
+        function restoreRawDataFromStorage() {
+            try {
+                const saved = localStorage.getItem('twin_day_raw_data');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    if (state.allData && state.allData.length > 0) {
+                        allData = state.allData;
+                        allHeaders = state.allHeaders || Object.keys(allData[0]);
+                        document.getElementById('fileName').textContent = state.fileName;
+                        
+                        // We must hide the overlay before finishLoad since it handles the rest
+                        document.getElementById('uploadOverlay').style.display = 'none';
+                        document.getElementById('appContainer').style.display = 'flex';
+                        
+                        columnTypes = detectColumnTypes(allHeaders, allData);
+                        
+                        // Skip save inside finishLoad when restoring (prevent infinite loop or redundant save)
+                        // Actually it's fine if it saves again, but let's be clean
+                        let originalSave = saveRawDataToStorage;
+                        saveRawDataToStorage = function() {}; 
+                        finishLoad();
+                        saveRawDataToStorage = originalSave;
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error restoring data:', e);
+            }
+            return false;
+        }
+
+        // ===== INTERACTIVE DRILL-DOWN PIVOT TABLE =====
+        let drillState = {
+            visible: true,
+            sliceBy: 'none',
+            expanded: new Set()
+        };
+
+        function toggleDrillTable() {
+            drillState.visible = !drillState.visible;
+            const wrap = document.getElementById('drillTableWrapper');
+            const btn = document.getElementById('toggleTableBtn');
+            if (drillState.visible) {
+                wrap.style.display = 'flex';
+                btn.innerHTML = '👁 Hide Table';
+                if (filteredData && filteredData.length) renderDrillTable();
+            } else {
+                wrap.style.display = 'none';
+                btn.innerHTML = '👁 Show Table';
+            }
+        }
+
+        function setDrillSlice(sliceType, btn) {
+            document.querySelectorAll('.drill-slice-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.color = 'var(--text1)';
+            });
+            btn.classList.add('active');
+            btn.style.background = 'var(--accent)';
+            btn.style.color = '#fff';
+            drillState.sliceBy = sliceType;
+            renderDrillTable();
+        }
+
+        function toggleDrillRow(pathStr) {
+            if (drillState.expanded.has(pathStr)) drillState.expanded.delete(pathStr);
+            else drillState.expanded.add(pathStr);
+            renderDrillTable();
+        }
+
+        function renderDrillTable() {
+            const container = document.getElementById('drillContentContainer');
+            if (!filteredData || !filteredData.length) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text3);">No data available</div>';
+                return;
+            }
+
+            const gmCol = detectGmCol() || 'GM';
+            const asmCol = detectAsmCol() || 'ASM';
+            const storeCol = findCol(['store', 'branch']) || 'Store';
+            const valCol = detectValueCol() || 'Sales Value';
+            const dateCol = detectDateCol() || 'Month';
+            const catCol = detectBrandCol() || 'Brand';
+            
+            const levels = [gmCol, asmCol, storeCol].filter(Boolean);
+            
+            let sliceCol = null;
+            if (drillState.sliceBy === 'month') sliceCol = dateCol;
+            if (drillState.sliceBy === 'year') sliceCol = 'Year'; // Assuming Year column exists
+            if (drillState.sliceBy === 'category') sliceCol = catCol;
+
+            // Get unique slice values (Columns)
+            const sliceKeys = new Set();
+            if (sliceCol) {
+                filteredData.forEach(r => {
+                    let k = String(r[sliceCol] || '').trim();
+                    if(drillState.sliceBy === 'month' && r[sliceCol] instanceof Date) {
+                        k = r[sliceCol].toLocaleString('default', {month:'short', year:'2-digit'});
+                    }
+                    if (k) sliceKeys.add(k);
+                });
+            }
+            const sortedSliceKeys = Array.from(sliceKeys).sort();
+
+            // Build hierarchical tree
+            const tree = { name: 'Root', val: 0, slices: {}, children: {} };
+            
+            filteredData.forEach(r => {
+                const v = Number(r[valCol]) || 0;
+                let sKey = null;
+                if (sliceCol) {
+                    sKey = String(r[sliceCol] || '').trim();
+                    if(drillState.sliceBy === 'month' && r[sliceCol] instanceof Date) {
+                        sKey = r[sliceCol].toLocaleString('default', {month:'short', year:'2-digit'});
+                    }
+                }
+
+                tree.val += v;
+                if (sKey) {
+                    tree.slices[sKey] = (tree.slices[sKey] || 0) + v;
+                }
+
+                let curr = tree;
+                levels.forEach((lvlCol) => {
+                    const lName = String(r[lvlCol] || 'Unknown').trim();
+                    if (!curr.children[lName]) {
+                        curr.children[lName] = { name: lName, val: 0, slices: {}, children: {} };
+                    }
+                    curr = curr.children[lName];
+                    curr.val += v;
+                    if (sKey) {
+                        curr.slices[sKey] = (curr.slices[sKey] || 0) + v;
+                    }
+                });
+            });
+
+            const maxTotal = tree.val;
+
+            let html = `
+            <div style="overflow-x:auto; border-radius:8px; border:1px solid var(--glass-border);">
+                <table style="width:100%; border-collapse:collapse; min-width:600px; text-align:left;">
+                    <thead>
+                        <tr style="background:var(--bg3); border-bottom:1px solid var(--glass-border);">
+                            <th style="padding:12px; font-weight:600; color:var(--text2); position:sticky; left:0; background:var(--bg3); z-index:2; min-width:250px;">Hierarchy</th>
+                            <th style="padding:12px; font-weight:600; color:var(--text2); text-align:right;">Total Sales</th>
+                            ${sortedSliceKeys.map(k => `<th style="padding:12px; font-weight:600; color:var(--text2); text-align:right;">${k}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            function renderNode(node, path, depth) {
+                const isExpanded = drillState.expanded.has(path);
+                const hasChildren = Object.keys(node.children).length > 0;
+                const pad = depth * 24 + 12;
+                const arrow = hasChildren ? (isExpanded ? '▼' : '▶') : '&nbsp;&nbsp;';
+                
+                const pct = maxTotal ? ((node.val / maxTotal) * 100).toFixed(1) : 0;
+                const barBg = depth === 0 ? 'var(--accent)' : depth === 1 ? 'var(--accent2)' : 'var(--accent3)';
+
+                html += `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); cursor:${hasChildren ? 'pointer' : 'default'}; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'" ${hasChildren ? `onclick="toggleDrillRow('${path}')"` : ''}>
+                    <td style="padding:8px 12px; padding-left:${pad}px; position:sticky; left:0; background:inherit; z-index:1;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="color:var(--text3); font-size:0.7rem; width:12px;">${arrow}</span>
+                            <span style="font-weight:${depth === 0 ? '600' : '400'}; color:${depth === 0 ? '#fff' : 'var(--text)'};">${node.name}</span>
+                        </div>
+                    </td>
+                    <td style="padding:8px 12px; text-align:right;">
+                        <div style="font-weight:600; color:var(--text);">${fmtShort(node.val)}</div>
+                        <div style="height:3px; background:rgba(255,255,255,0.1); width:100%; margin-top:4px; border-radius:2px; overflow:hidden;">
+                            <div style="height:100%; width:${pct}%; background:${barBg};"></div>
+                        </div>
+                    </td>
+                    ${sortedSliceKeys.map(k => `
+                        <td style="padding:8px 12px; text-align:right; color:var(--text2); font-size:0.9rem;">
+                            ${node.slices[k] ? fmtShort(node.slices[k]) : '-'}
+                        </td>
+                    `).join('')}
+                </tr>
+                `;
+
+                if (isExpanded && hasChildren) {
+                    const sortedChildren = Object.values(node.children).sort((a,b) => b.val - a.val);
+                    sortedChildren.forEach(c => renderNode(c, path + '|' + c.name, depth + 1));
+                }
+            }
+
+            // Render root children (GM level)
+            const sortedRoot = Object.values(tree.children).sort((a,b) => b.val - a.val);
+            sortedRoot.forEach(c => renderNode(c, c.name, 0));
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        setTimeout(() => restoreRawDataFromStorage(), 100);
+
     </script>
     <!-- ===== FULLSCREEN CHART OVERLAY ===== -->
     <div id="chartFsOverlay" class="fs-overlay" onclick="closeFullscreen()">
